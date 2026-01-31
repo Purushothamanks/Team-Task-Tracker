@@ -1,0 +1,3051 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TeamTracker — Leader & Member Task Tracker</title>
+  <meta name="description" content="Single-file responsive task tracker with role-based access (leader/member). Uses localStorage for storage." />
+  <style>
+    /* -------------------------
+       CSS Variables for Themes
+       ------------------------- */
+    :root {
+      --bg: #f6f8fb;
+      --card: #fff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #4f46e5;
+      --accent2: #06b6d4;
+      --danger: #ef4444;
+      --success: #10b981;
+      --border: #e6e9ef;
+      --shadow: rgba(15,23,42,0.06);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #6366f1;
+      --accent2: #06b6d4;
+      --danger: #f87171;
+      --success: #34d399;
+      --border: #334155;
+      --shadow: rgba(0,0,0,0.3);
+    }
+
+    /* -------------------------
+       Styling
+       ------------------------- */
+    * {
+      box-sizing: border-box;
+      transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+    }
+
+    html, body, #app {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 4px 6px var(--shadow);
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    main {
+      margin-top: 0;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 4px 6px var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 16px;
+    }
+
+    @media (max-width: 920px) {
+      .container {
+        padding: 10px;
+      }
+      
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .logo {
+        width: 40px;
+        height: 40px;
+      }
+      
+      header {
+        padding: 10px 14px;
+        flex-wrap: wrap;
+      }
+      
+      .brand {
+        flex: 1;
+        min-width: 200px;
+      }
+      
+      #header-actions {
+        margin-top: 10px;
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      background: var(--card);
+      color: var(--text);
+    }
+
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 0;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button.secondary {
+      background: var(--accent2);
+    }
+
+    button.ghost {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+
+    button.danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    button.success {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .task {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    .progress-bar {
+      height: 10px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      width: 220px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--success), var(--accent));
+      width: 0%;
+    }
+
+    .right {
+      margin-left: auto;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .small {
+      font-size: 13px;
+    }
+
+    footer {
+      margin-top: 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 16px 0;
+    }
+
+    .modal-back {
+      position: fixed;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(2,6,23,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      overflow: auto;
+    }
+
+    .avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--border);
+      font-size: 13px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    textarea.large {
+      min-height: 120px;
+    }
+
+    .h8 { height: 8px; }
+    .h12 { height: 12px; }
+    .h16 { height: 16px; }
+
+    .meta {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 16px;
+      margin: 8px 0;
+      flex-wrap: wrap;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .forgot-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .forgot-link:hover {
+      text-decoration: underline;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      overflow-x: auto;
+    }
+
+    .nav-tab {
+      padding: 10px 16px;
+      border-radius: 8px 8px 0 0;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+      position: relative;
+    }
+
+    .nav-tab.active {
+      background: var(--card);
+      color: var(--accent);
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: var(--danger);
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .team-member-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .team-member {
+      padding: 4px 8px;
+      background: var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    /* Dashboard Analytics Styles */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 6px var(--shadow);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px var(--shadow);
+    }
+
+    .stat-number {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--accent);
+      margin: 10px 0;
+    }
+
+    .chart-container {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .chart-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .pie-chart-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px 0;
+    }
+
+    .pie-chart {
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pie-segment {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 50% 100%);
+      transform-origin: 50% 50%;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+    }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .theme-icon {
+      font-size: 16px;
+    }
+
+    /* Password Field Styles */
+    .password-container {
+      position: relative;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: var(--muted);
+      background: var(--card);
+      padding: 5px;
+      border-radius: 4px;
+    }
+
+    .toggle-password:hover {
+      color: var(--accent);
+    }
+
+    /* Leader Profile Styles */
+    .leader-profile {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 20px;
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 4px 6px var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .leader-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .leader-info {
+      flex: 1;
+    }
+
+    .leader-name {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .leader-role {
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .leader-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .detail-value {
+      font-weight: 600;
+    }
+
+    /* Notification Styles */
+    .notification-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 300px;
+    }
+
+    .notification {
+      padding: 12px 16px;
+      background: var(--card);
+      color: var(--text);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-left: 4px solid var(--accent);
+      font-size: 14px;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Mobile-specific styles */
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+      }
+      
+      .stat-card {
+        padding: 15px;
+      }
+      
+      .stat-number {
+        font-size: 24px;
+      }
+      
+      .pie-chart {
+        width: 200px;
+        height: 200px;
+      }
+      
+      .task {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      
+      .task .right {
+        margin-left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .progress-bar {
+        width: 100%;
+        max-width: 200px;
+      }
+      
+      .modal {
+        padding: 12px;
+      }
+      
+      .nav-tabs {
+        gap: 4px;
+      }
+      
+      .nav-tab {
+        padding: 8px 12px;
+        font-size: 14px;
+      }
+      
+      .leader-profile {
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .leader-details {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .notification-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 8px;
+      }
+      
+      header {
+        padding: 8px 12px;
+      }
+      
+      .logo {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+      }
+      
+      .title {
+        font-size: 16px;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .pie-chart {
+        width: 180px;
+        height: 180px;
+      }
+      
+      button {
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+      
+      .leader-details {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Member-specific styles */
+    .member-dashboard {
+      padding: 20px 0;
+    }
+
+    .member-welcome {
+      margin-bottom: 24px;
+    }
+
+    .member-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .member-stat-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 6px var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .member-stat-number {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--accent);
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <div class="container" id="app">
+    <header class="card">
+      <div class="brand">
+        <div class="logo">TT</div>
+        <div>
+          <div class="title">TeamTracker</div>
+          <div class="subtitle">Leader & Member private task tracker</div>
+        </div>
+      </div>
+      <div id="header-actions" class="controls"></div>
+    </header>
+
+    <main>
+      <div id="auth-area" class="card"></div>
+
+      <div id="app-area" style="display:none">
+        <div class="grid">
+          <div>
+            <div id="main-card" class="card">
+              <div id="nav-tabs"></div>
+              <div id="dashboard-section" class="section active">
+                <div id="dashboard-content"></div>
+              </div>
+              <div id="members-section" class="section">
+                <div id="members-content"></div>
+              </div>
+              <div id="tasks-section" class="section">
+                <div id="tasks-content"></div>
+              </div>
+              <div id="teams-section" class="section">
+                <div id="teams-content"></div>
+              </div>
+              <div id="requests-section" class="section">
+                <div id="requests-content"></div>
+              </div>
+              <div id="activity-section" class="section">
+                <div id="activity-content-tab"></div>
+              </div>
+            </div>
+          </div>
+          <aside>
+            <div class="card sidebar-card">
+              <div id="sidebar-user" class="user-card"></div>
+              <div class="h12"></div>
+              <div id="sidebar-actions"></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </main>
+
+    <footer>Never Settle ❤️ • TeamTracker</footer>
+
+    <!-- Notification Container -->
+    <div class="notification-container" id="notification-container"></div>
+
+    <!-- Templates -->
+    <template id="login-template">
+      <h3>Login</h3>
+      <div class="muted">Sign in to your TeamTracker account.</div>
+      <div class="h12"></div>
+      <label>Username</label>
+      <input id="login-username" type="text" placeholder="username" />
+      <label style="margin-top:8px">Password</label>
+      <div class="password-container">
+        <input id="login-password" type="password" placeholder="your password" />
+        <span class="toggle-password" id="toggle-password">👁️</span>
+      </div>
+      <div class="h8"></div>
+      <div style="text-align:right">
+        <span class="forgot-link" id="btn-forgot-password">Forgot password?</span>
+      </div>
+      <div class="h12"></div>
+      <div class="controls"><button id="btn-login">Login</button><button id="btn-show-signup" class="secondary">Request to join</button></div>
+    </template>
+
+    <template id="forgot-password-template">
+      <h3>Reset Password</h3>
+      <div class="muted">Enter your username to reset your password.</div>
+      <div class="h12"></div>
+      <label>Username</label>
+      <input id="reset-username" type="text" placeholder="username" />
+      <div class="h12"></div>
+      <div class="controls">
+        <button id="btn-reset-password">Reset Password</button>
+        <button id="btn-back-to-login" class="ghost">Back to login</button>
+      </div>
+    </template>
+
+    <template id="change-password-template">
+      <h3>Change Password</h3>
+      <div class="muted">Set your new password.</div>
+      <div class="h12"></div>
+      <label>New Password</label>
+      <div class="password-container">
+        <input id="new-password" type="password" placeholder="new password" />
+        <span class="toggle-password" id="toggle-new-password">👁️</span>
+      </div>
+      <label style="margin-top:8px">Confirm New Password</label>
+      <div class="password-container">
+        <input id="confirm-password" type="password" placeholder="confirm new password" />
+        <span class="toggle-password" id="toggle-confirm-password">👁️</span>
+      </div>
+      <div class="h12"></div>
+      <div class="controls">
+        <button id="btn-change-password">Change Password</button>
+        <button id="btn-cancel-change" class="ghost">Cancel</button>
+      </div>
+    </template>
+
+    <template id="signup-template">
+      <h3>Request to join</h3>
+      <div class="muted">Send a membership request. Leader(s) will accept or decline.</div>
+      <div class="h12"></div>
+      <label>Full name</label>
+      <input id="su-name" type="text" placeholder="John Doe" />
+      <label style="margin-top:8px">Email</label>
+      <input id="su-email" type="email" placeholder="you@example.com" />
+      <label style="margin-top:8px">Desired username</label>
+      <input id="su-username" type="text" placeholder="john" />
+      <label style="margin-top:8px">Password</label>
+      <div class="password-container">
+        <input id="su-password" type="password" placeholder="choose a password" />
+        <span class="toggle-password" id="toggle-signup-password">👁️</span>
+      </div>
+      <div class="h12"></div>
+      <div class="controls"><button id="btn-signup">Send request</button><button id="btn-show-login" class="ghost">Back to login</button></div>
+    </template>
+
+    <template id="leader-dashboard-template">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h2>Leader Dashboard</h2>
+          <div class="muted">Approve members, manage tasks, and view private notes.</div>
+        </div>
+      </div>
+
+      <div class="h12"></div>
+
+      <!-- Leader Profile -->
+      
+
+      <!-- Stats Grid -->
+      <div class="stats-grid" id="stats-grid"></div>
+
+      <!-- Pie Chart -->
+      <div class="chart-container">
+        <div class="chart-title">Task Progress Overview</div>
+        <div class="pie-chart-container">
+          <div class="pie-chart" id="pie-chart"></div>
+        </div>
+        <div class="chart-legend" id="pie-legend"></div>
+      </div>
+
+      <div class="h12"></div>
+
+     
+    </template>
+
+    <template id="leader-members-template">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>Team Members</h2>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <div style="flex:1;">
+            <label>Search members</label>
+            <input id="search-members" placeholder="Search by name or username" />
+          </div>
+        </div>
+      </div>
+
+      <div class="h12"></div>
+
+      <div id="members-list"></div>
+    </template>
+
+    <template id="leader-tasks-template">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>All Tasks</h2>
+        <button id="btn-new-task-from-tab">New Task</button>
+      </div>
+
+      <div class="h12"></div>
+
+      <div id="tasks-list"></div>
+    </template>
+
+    <template id="leader-teams-template">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>Teams</h2>
+        <button id="btn-new-team-from-tab">Create New Team</button>
+      </div>
+
+      <div class="h12"></div>
+
+      <div id="teams-list"></div>
+    </template>
+
+    <template id="leader-activity-template">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>Recent Activity</h2>
+      </div>
+
+      <div class="h12"></div>
+
+      <div id="activity-list"></div>
+    </template>
+
+    <template id="leader-requests-template">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>Membership Requests</h2>
+        <div class="muted"><span id="requests-count"${STATE.membershipRequests.length}></span> pending requests</div>
+      </div>
+
+      <div class="h12"></div>
+
+      <div id="requests-list"></div>
+    </template>
+
+    <template id="member-dashboard-template">
+      <div class="member-dashboard">
+        <div class="member-welcome">
+          <h2>Welcome, <span id="member-name"></span>!</h2>
+          <div class="muted">View your tasks and update your progress.</div>
+        </div>
+
+        <div class="member-stats" id="member-stats"></div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h3>Your Tasks</h3>
+          <button id="btn-request-new" class="secondary">Request New Task</button>
+        </div>
+
+        <div class="h12"></div>
+
+        <div id="my-tasks"></div>
+      </div>
+    </template>
+
+    <div id="modal-root"></div>
+  </div>
+
+  <script>
+    /* -------------------------
+       Storage & State
+       ------------------------- */
+    const STORAGE_KEY = 'teamtracker_app_v7';
+    const CURRENT_USER_KEY = 'teamtracker_current_user';
+
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return null;
+        return JSON.parse(raw);
+      }catch(e){
+        console.error('loadState', e);
+        return null;
+      }
+    }
+
+    function saveState(state){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadCurrentUser(){
+      try{
+        const raw = localStorage.getItem(CURRENT_USER_KEY);
+        if(!raw) return null;
+        return JSON.parse(raw);
+      }catch(e){
+        console.error('loadCurrentUser', e);
+        return null;
+      }
+    }
+
+    function saveCurrentUser(user){
+      if(user) {
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+      } else {
+        localStorage.removeItem(CURRENT_USER_KEY);
+      }
+    }
+
+    function uid(prefix='id'){ 
+      return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2,7); 
+    }
+
+    // Seed: two leaders only
+    function seedState(){
+      const now = Date.now();
+      const leaderA = { 
+        id:'u_puru', 
+        username:'purushothaman', 
+        name:'Purushothaman', 
+        email:'purushothamank.s799@gmail.com', 
+        password:'puru123', 
+        role:'leader', 
+        createdAt: now 
+      };
+      const leaderB = { 
+        id:'u_leader2', 
+        username:'leader2', 
+        name:'Leader Two', 
+        email:'leader2@example.com', 
+        password:'leader123', 
+        role:'leader', 
+        createdAt: now 
+      };
+      return {
+        users: [leaderA, leaderB],
+        tasks: [],
+        membershipRequests: [],
+        taskRequests: [],
+        teams: [],
+        activity: [],
+        settings: { 
+          created: now,
+          theme: 'light'
+        }
+      };
+    }
+
+    let STATE = loadState() || seedState();
+    let CURRENT_USER = loadCurrentUser();
+    let PASSWORD_RESET_USER = null;
+
+    function persist(){ 
+      saveState(STATE); 
+      saveCurrentUser(CURRENT_USER);
+    }
+
+    /* -------------------------
+       Notification System
+       ------------------------- */
+    let notificationQueue = [];
+    let isShowingNotification = false;
+
+    function showNotification(message, type = 'info') {
+      notificationQueue.push({ message, type });
+      
+      if (!isShowingNotification) {
+        processNotificationQueue();
+      }
+    }
+
+    function processNotificationQueue() {
+      if (notificationQueue.length === 0) {
+        isShowingNotification = false;
+        return;
+      }
+      
+      isShowingNotification = true;
+      const { message, type } = notificationQueue.shift();
+      
+      const notificationContainer = document.getElementById('notification-container');
+      if (!notificationContainer) return;
+      
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      notification.style.borderLeftColor = type === 'error' ? 'var(--danger)' : 
+                                          type === 'success' ? 'var(--success)' : 
+                                          'var(--accent)';
+      notification.textContent = message;
+      
+      notificationContainer.appendChild(notification);
+      
+      // Remove after 5 seconds
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+        
+        // Process next notification after a short delay
+        setTimeout(processNotificationQueue, 300);
+      }, 5000);
+    }
+
+    /* -------------------------
+       Email Simulation (for demo purposes)
+       ------------------------- */
+    function simulateEmail(to, subject, message) {
+      // In a real application, this would send an actual email
+      // For demo purposes, we'll just log it and show a notification
+      console.log(`Email to: ${to}`);
+      console.log(`Subject: ${subject}`);
+      console.log(`Message: ${message}`);
+      console.log('--- Email sent successfully ---');
+      
+      // Show a notification to the user
+      showNotification(`Email notification sent to ${to}`);
+    }
+
+    function sendPasswordResetEmail(user, tempPassword) {
+      const subject = 'TeamTracker - Password Reset';
+      const message = `
+        Hello ${user.name},
+        
+        Your password has been reset. Your temporary password is: ${tempPassword}
+        
+        Please log in with this temporary password and change it immediately.
+        
+        If you didn't request this reset, please contact your administrator.
+        
+        Best regards,
+        TeamTracker System
+      `;
+      
+      simulateEmail(user.email, subject, message);
+    }
+
+    function sendTaskAssignmentEmail(assignee, task, assignedBy) {
+      const subject = 'TeamTracker - New Task Assigned';
+      const message = `
+        Hello ${assignee.name},
+        
+        You have been assigned a new task: "${task.title}"
+        
+        Description: ${task.description}
+        
+        Assigned by: ${assignedBy.name}
+        
+        Please log in to your TeamTracker account to view details and update progress.
+        
+        Best regards,
+        TeamTracker System
+      `;
+      
+      simulateEmail(assignee.email, subject, message);
+    }
+
+    function sendTaskCompletionEmail(creator, task, completedBy) {
+      const subject = 'TeamTracker - Task Completed';
+      const message = `
+        Hello ${creator.name},
+        
+        The task "${task.title}" has been marked as completed by ${completedBy.name}.
+        
+        Task: ${task.title}
+        Completed by: ${completedBy.name}
+        
+        Please log in to your TeamTracker account to review the completion.
+        
+        Best regards,
+        TeamTracker System
+      `;
+      
+      simulateEmail(creator.email, subject, message);
+    }
+
+    function sendTaskRequestEmail(leaders, requester, taskDescription) {
+      const subject = 'TeamTracker - New Task Request';
+      const message = `
+        Hello Team Leader,
+        
+        ${requester.name} has requested a new task.
+        
+        Request details: ${taskDescription}
+        
+        Please log in to your TeamTracker account to review and assign the task.
+        
+        Best regards,
+        TeamTracker System
+      `;
+      
+      // Send to all leaders
+      leaders.forEach(leader => {
+        simulateEmail(leader.email, subject, message);
+      });
+    }
+
+    /* -------------------------
+       Theme Management
+       ------------------------- */
+    function initTheme() {
+      const savedTheme = STATE.settings.theme || 'light';
+      document.body.setAttribute('data-theme', savedTheme);
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      document.body.setAttribute('data-theme', newTheme);
+      STATE.settings.theme = newTheme;
+      persist();
+    }
+
+    /* -------------------------
+       Helpers
+       ------------------------- */
+    function findUserByUsername(username){
+      if(!username) return null;
+      return STATE.users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    }
+
+    function getUserById(id){ 
+      return STATE.users.find(u => u.id === id); 
+    }
+
+    function getUserName(id){ 
+      const u = getUserById(id); 
+      return u ? u.name : 'Unknown'; 
+    }
+
+    function getUserEmail(id){ 
+      const u = getUserById(id); 
+      return u ? u.email || '' : ''; 
+    }
+
+    function escapeHtml(s){ 
+      if(s === undefined || s === null) return ''; 
+      return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); 
+    }
+
+    /* -------------------------
+       Password Visibility Toggle
+       ------------------------- */
+    function setupPasswordToggle(passwordInput, toggleButton) {
+      toggleButton.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        toggleButton.textContent = type === 'password' ? '👁️' : '🙈';
+      });
+    }
+
+    /* -------------------------
+       Enter Key Navigation
+       ------------------------- */
+    function setupEnterKeyNavigation() {
+      const usernameInput = document.getElementById('login-username');
+      const passwordInput = document.getElementById('login-password');
+      
+      if (usernameInput) {
+        usernameInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            passwordInput.focus();
+          }
+        });
+      }
+      
+      if (passwordInput) {
+        passwordInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('btn-login').click();
+          }
+        });
+      }
+    }
+
+    function setupSignupEnterKeyNavigation() {
+      const nameInput = document.getElementById('su-name');
+      const emailInput = document.getElementById('su-email');
+      const usernameInput = document.getElementById('su-username');
+      const passwordInput = document.getElementById('su-password');
+      
+      if (nameInput) {
+        nameInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            emailInput.focus();
+          }
+        });
+      }
+      
+      if (emailInput) {
+        emailInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            usernameInput.focus();
+          }
+        });
+      }
+      
+      if (usernameInput) {
+        usernameInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            passwordInput.focus();
+          }
+        });
+      }
+      
+      if (passwordInput) {
+        passwordInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('btn-signup').click();
+          }
+        });
+      }
+    }
+
+    /* -------------------------
+       Auth & membership
+       ------------------------- */
+    function login(username, password){
+      const u = findUserByUsername(username);
+      if(!u) return { ok:false, msg:'No user found' };
+      if(u.password !== password) return { ok:false, msg:'Invalid credentials' };
+      CURRENT_USER = u;
+      saveCurrentUser(u);
+      logActivity(`${u.name} logged in`);
+      renderApp();
+      return { ok:true };
+    }
+
+    function resetPassword(username){
+      const u = findUserByUsername(username);
+      if(!u) return { ok:false, msg:'No user found with that username' };
+      
+      // Generate a simple temporary password
+      const tempPassword = Math.random().toString(36).slice(-8);
+      u.password = tempPassword;
+      
+      persist();
+      logActivity(`Password reset for ${u.name}`);
+      
+      // Send email notification
+      sendPasswordResetEmail(u, tempPassword);
+      
+      PASSWORD_RESET_USER = u;
+      return { ok:true, tempPassword };
+    }
+
+    function changePassword(newPassword, confirmPassword){
+      if(!newPassword || !confirmPassword) return { ok:false, msg:'Please fill in both password fields' };
+      if(newPassword !== confirmPassword) return { ok:false, msg:'Passwords do not match' };
+      
+      if(PASSWORD_RESET_USER) {
+        PASSWORD_RESET_USER.password = newPassword;
+        persist();
+        logActivity(`Password changed for ${PASSWORD_RESET_USER.name}`);
+        PASSWORD_RESET_USER = null;
+        return { ok:true };
+      }
+      return { ok:false, msg:'No user identified for password change' };
+    }
+
+    function signupRequest(name, email, username, password){
+      if(!name || !username || !password || !email) return { ok:false, msg:'Missing fields' };
+      if(findUserByUsername(username)) return { ok:false, msg:'Username already taken by existing user' };
+      if(STATE.membershipRequests.find(r => r.username.toLowerCase() === username.toLowerCase())) return { ok:false, msg:'There is already a pending request with this username' };
+      if(STATE.users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase())) return { ok:false, msg:'An account with this email already exists' };
+      const req = { id: uid('rq_'), name, email, username, password, time: Date.now() };
+      STATE.membershipRequests.push(req);
+      logActivity(`New membership request: ${name} (${username})`);
+      persist();
+      return { ok:true };
+    }
+
+    function acceptRequest(requestId){
+      const idx = STATE.membershipRequests.findIndex(r => r.id === requestId);
+      if(idx === -1) return false;
+      const r = STATE.membershipRequests[idx];
+      const newUser = { id: uid('u_'), name: r.name, username: r.username, email: r.email || '', password: r.password, role:'member', createdAt: Date.now() };
+      STATE.users.push(newUser);
+      STATE.membershipRequests.splice(idx,1);
+      logActivity(`${CURRENT_USER.name} accepted new member: ${newUser.name}`);
+      persist();
+      
+      // Update UI without full reload
+      if (document.getElementById('requests-section').classList.contains('active')) {
+        renderLeaderRequests();
+      } else {
+        renderLeaderDashboard();
+      }
+      updateNavBadges();
+      return true;
+    }
+
+    function declineRequest(requestId){
+      const idx = STATE.membershipRequests.findIndex(r => r.id === requestId);
+      if(idx === -1) return false;
+      const r = STATE.membershipRequests[idx];
+      STATE.membershipRequests.splice(idx,1);
+      logActivity(`${CURRENT_USER.name} declined request: ${r.name}`);
+      persist();
+      
+      // Update UI without full reload
+      if (document.getElementById('requests-section').classList.contains('active')) {
+        renderLeaderRequests();
+      } else {
+        renderLeaderDashboard();
+      }
+      updateNavBadges();
+      return true;
+    }
+
+    function removeMember(memberId){
+      const uidx = STATE.users.findIndex(u => u.id === memberId && u.role === 'member');
+      if(uidx === -1) return false;
+      const member = STATE.users[uidx];
+      STATE.tasks = STATE.tasks.filter(t => t.assignee !== memberId);
+      STATE.users.splice(uidx, 1);
+      logActivity(`${CURRENT_USER.name} deleted member ${member.name} and their tasks`);
+      persist();
+      
+      // Update UI without full reload
+      renderLeaderMembers();
+      return true;
+    }
+
+    function logout(){
+      if(CURRENT_USER) logActivity(`${CURRENT_USER.name} logged out`);
+      CURRENT_USER = null;
+      saveCurrentUser(null);
+      PASSWORD_RESET_USER = null;
+      renderApp();
+    }
+
+    /* -------------------------
+       Task Requests
+       ------------------------- */
+    function requestTask(description) {
+      if (!description) return false;
+      
+      const taskRequest = {
+        id: uid('tr_'),
+        memberId: CURRENT_USER.id,
+        memberName: CURRENT_USER.name,
+        description: description,
+        time: Date.now()
+      };
+      
+      STATE.taskRequests.push(taskRequest);
+      persist();
+      logActivity(`${CURRENT_USER.name} requested a new task`);
+      
+      // Send email to leaders
+      const leaders = STATE.users.filter(u => u.role === 'leader');
+      sendTaskRequestEmail(leaders, CURRENT_USER, description);
+      
+      updateNavBadges();
+      return true;
+    }
+
+    function getTaskRequestCount() {
+      return STATE.taskRequests.length;
+    }
+
+    function clearTaskRequest(requestId) {
+      const idx = STATE.taskRequests.findIndex(r => r.id === requestId);
+      if (idx === -1) return false;
+      STATE.taskRequests.splice(idx, 1);
+      persist();
+      updateNavBadges();
+      return true;
+    }
+
+    /* -------------------------
+       Teams functionality
+       ------------------------- */
+    function createTeam(name, description, members){
+      const team = { id: uid('team_'), name, description, members, created: Date.now(), createdBy: CURRENT_USER.id };
+      STATE.teams.push(team);
+      logActivity(`${CURRENT_USER.name} created team: ${name}`);
+      persist();
+      
+      // Update UI without full reload
+      renderLeaderTeams();
+      return team;
+    }
+
+    function updateTeam(teamId, patch){
+      const team = STATE.teams.find(t => t.id === teamId);
+      if(!team) return false;
+      Object.assign(team, patch);
+      logActivity(`${CURRENT_USER.name} updated team: ${team.name}`);
+      persist();
+      
+      // Update UI without full reload
+      renderLeaderTeams();
+      return true;
+    }
+
+    function deleteTeam(teamId){
+      const idx = STATE.teams.findIndex(t => t.id === teamId);
+      if(idx === -1) return false;
+      const team = STATE.teams[idx];
+      STATE.teams.splice(idx,1);
+      logActivity(`${CURRENT_USER.name} deleted team: ${team.name}`);
+      persist();
+      
+      // Update UI without full reload
+      renderLeaderTeams();
+      return true;
+    }
+
+    /* -------------------------
+       Activity log (leaders only)
+       ------------------------- */
+    function logActivity(text){
+      STATE.activity.unshift({ id: uid('a_'), text, time: Date.now() });
+      if(STATE.activity.length > 50) STATE.activity.pop();
+      persist();
+      renderActivityTab();
+    }
+
+    /* -------------------------
+       Tasks create/update/delete
+       ------------------------- */
+    function createTask({ title, description, assignee, creator, progress=0, privateNotes='', assignToTeam=false, teamId=null }){
+      let tasks = [];
+      
+      if (assignToTeam && teamId) {
+        // Assign to all team members
+        const team = STATE.teams.find(t => t.id === teamId);
+        if (team) {
+          team.members.forEach(memberId => {
+            const t = { 
+              id: uid('t_'), 
+              title, 
+              description, 
+              assignee: memberId, 
+              creator, 
+              progress: parseInt(progress||0), 
+              privateNotes, 
+              created: Date.now(), 
+              statusNotes: [],
+              isTeamTask: true,
+              teamId: teamId
+            };
+            tasks.push(t);
+            STATE.tasks.unshift(t);
+            
+            // Send email notification to team member
+            const member = getUserById(memberId);
+            const creatorUser = getUserById(creator);
+            if (member && creatorUser) {
+              sendTaskAssignmentEmail(member, t, creatorUser);
+            }
+          });
+          logActivity(`${getUserName(creator)} created team task "${title}" for team ${team.name}`);
+        }
+      } else {
+        // Assign to individual
+        const t = { 
+          id: uid('t_'), 
+          title, 
+          description, 
+          assignee, 
+          creator, 
+          progress: parseInt(progress||0), 
+          privateNotes, 
+          created: Date.now(), 
+          statusNotes: [],
+          isTeamTask: false
+        };
+        tasks.push(t);
+        STATE.tasks.unshift(t);
+        logActivity(`${getUserName(creator)} created task "${title}" for ${getUserName(assignee)}`);
+        
+        // Send email notification to assignee
+        const assigneeUser = getUserById(assignee);
+        const creatorUser = getUserById(creator);
+        if (assigneeUser && creatorUser) {
+          sendTaskAssignmentEmail(assigneeUser, t, creatorUser);
+        }
+      }
+      
+      persist();
+      
+      // Update UI without full reload
+      if (CURRENT_USER.role === 'leader') {
+        renderLeaderTasks();
+      } else {
+        renderMemberTasks();
+      }
+      return tasks;
+    }
+
+    function updateTask(taskId, patch){
+      const t = STATE.tasks.find(x => x.id === taskId);
+      if(!t) return false;
+      
+      const oldProgress = t.progress;
+      Object.assign(t, patch);
+      
+      // Check if task was completed (progress changed to 100%)
+      if (oldProgress !== 100 && t.progress === 100) {
+        const assignee = getUserById(t.assignee);
+        const creator = getUserById(t.creator);
+        if (assignee && creator) {
+          sendTaskCompletionEmail(creator, t, assignee);
+        }
+      }
+      
+      logActivity(`${CURRENT_USER.name} updated task: ${t.title}`);
+      persist();
+      
+      // Update UI without full reload
+      if (CURRENT_USER.role === 'leader') {
+        renderLeaderTasks();
+      } else {
+        renderMemberTasks();
+      }
+      return true;
+    }
+
+    function deleteTask(taskId){
+      const idx = STATE.tasks.findIndex(x => x.id === taskId);
+      if(idx === -1) return false;
+      const t = STATE.tasks[idx];
+      
+      // If it's a team task, delete all related team tasks
+      if (t.isTeamTask && t.teamId) {
+        STATE.tasks = STATE.tasks.filter(task => !(task.isTeamTask && task.teamId === t.teamId && task.title === t.title));
+      } else {
+        STATE.tasks.splice(idx,1);
+      }
+      
+      logActivity(`${CURRENT_USER.name} deleted task "${t.title}"`);
+      persist();
+      
+      // Update UI without full reload
+      if (CURRENT_USER.role === 'leader') {
+        renderLeaderTasks();
+      } else {
+        renderMemberTasks();
+      }
+      return true;
+    }
+
+    function addStatusNote(taskId, note){
+      const t = STATE.tasks.find(x => x.id === taskId);
+      if(!t) return false;
+      t.statusNotes = t.statusNotes || [];
+      t.statusNotes.unshift({ id: uid('sn_'), authorId: CURRENT_USER.id, text: note, time: Date.now() });
+      logActivity(`${CURRENT_USER.name} added status note to "${t.title}"`);
+      persist();
+      
+      // Update UI without full reload
+      if (CURRENT_USER.role === 'leader') {
+        renderLeaderTasks();
+      } else {
+        renderMemberTasks();
+      }
+      return true;
+    }
+
+    /* -------------------------
+       Dashboard Analytics
+       ------------------------- */
+    function calculateDashboardStats() {
+      const totalTasks = STATE.tasks.length;
+      const completedTasks = STATE.tasks.filter(t => t.progress === 100).length;
+      const inProgressTasks = STATE.tasks.filter(t => t.progress > 0 && t.progress < 100).length;
+      const notStartedTasks = STATE.tasks.filter(t => t.progress === 0).length;
+      const totalMembers = STATE.users.filter(u => u.role === 'member').length;
+      const totalTeams = STATE.teams.length;
+      const pendingRequests = STATE.membershipRequests.length;
+      const taskRequests = STATE.taskRequests.length;
+      
+      return {
+        totalTasks,
+        completedTasks,
+        inProgressTasks,
+        notStartedTasks,
+        totalMembers,
+        totalTeams,
+        pendingRequests,
+        taskRequests
+      };
+    }
+
+    function calculateMemberStats(memberId) {
+      const memberTasks = STATE.tasks.filter(t => t.assignee === memberId);
+      const totalTasks = memberTasks.length;
+      const completedTasks = memberTasks.filter(t => t.progress === 100).length;
+      const inProgressTasks = memberTasks.filter(t => t.progress > 0 && t.progress < 100).length;
+      const notStartedTasks = memberTasks.filter(t => t.progress === 0).length;
+      const avgProgress = totalTasks > 0 ? 
+        Math.round(memberTasks.reduce((sum, t) => sum + t.progress, 0) / totalTasks) : 0;
+      
+      return {
+        totalTasks,
+        completedTasks,
+        inProgressTasks,
+        notStartedTasks,
+        avgProgress
+      };
+    }
+
+    function renderDashboardStats() {
+      const stats = calculateDashboardStats();
+      const statsGrid = document.getElementById('stats-grid');
+      
+      if (!statsGrid) return;
+      
+      statsGrid.innerHTML = `
+        <div class="stat-card" data-section="tasks" data-filter="all">
+          <div class="muted">Total Tasks</div>
+          <div class="stat-number">${stats.totalTasks}</div>
+        </div>
+        <div class="stat-card" data-section="tasks" data-filter="completed">
+          <div class="muted">Completed</div>
+          <div class="stat-number">${stats.completedTasks}</div>
+        </div>
+        <div class="stat-card" data-section="tasks" data-filter="in-progress">
+          <div class="muted">In Progress</div>
+          <div class="stat-number">${stats.inProgressTasks}</div>
+        </div>
+        <div class="stat-card" data-section="tasks" data-filter="not-started">
+          <div class="muted">Not Started</div>
+          <div class="stat-number">${stats.notStartedTasks}</div>
+        </div>
+        <div class="stat-card" data-section="members">
+          <div class="muted">Team Members</div>
+          <div class="stat-number">${stats.totalMembers}</div>
+        </div>
+        <div class="stat-card" data-section="teams">
+          <div class="muted">Teams</div>
+          <div class="stat-number">${stats.totalTeams}</div>
+        </div>
+        <div class="stat-card" data-section="requests">
+          <div class="muted">Pending Requests</div>
+          <div class="stat-number">${stats.pendingRequests}</div>
+        </div>
+      `;
+      
+      // Add click event listeners to stat cards
+      statsGrid.querySelectorAll('.stat-card').forEach(card => {
+        card.addEventListener('click', function() {
+          const section = this.getAttribute('data-section');
+          const filter = this.getAttribute('data-filter');
+          
+          if (section === 'tasks') {
+            showSection('tasks');
+            // Set filter for tasks if specified
+            if (filter) {
+              setTimeout(() => {
+                renderTasksList(filter);
+              }, 100);
+            }
+          } else if (section === 'members') {
+            showSection('members');
+          } else if (section === 'teams') {
+            showSection('teams');
+          } else if (section === 'requests') {
+            showSection('requests');
+          }
+        });
+      });
+    }
+
+    function renderMemberStats() {
+      const stats = calculateMemberStats(CURRENT_USER.id);
+      const statsGrid = document.getElementById('member-stats');
+      
+      if (!statsGrid) return;
+      
+      statsGrid.innerHTML = `
+        <div class="member-stat-card">
+          <div class="muted">Total Tasks</div>
+          <div class="member-stat-number">${stats.totalTasks}</div>
+        </div>
+        <div class="member-stat-card">
+          <div class="muted">Completed</div>
+          <div class="member-stat-number">${stats.completedTasks}</div>
+        </div>
+        <div class="member-stat-card">
+          <div class="muted">In Progress</div>
+          <div class="member-stat-number">${stats.inProgressTasks}</div>
+        </div>
+        <div class="member-stat-card">
+          <div class="muted">Avg Progress</div>
+          <div class="member-stat-number">${stats.avgProgress}%</div>
+        </div>
+      `;
+    }
+
+    function renderPieChart() {
+      const stats = calculateDashboardStats();
+      const pieChart = document.getElementById('pie-chart');
+      const pieLegend = document.getElementById('pie-legend');
+      
+      if (!pieChart || !pieLegend) return;
+      
+      const total = stats.totalTasks || 1; // Avoid division by zero
+      const completedPercent = (stats.completedTasks / total) * 100;
+      const inProgressPercent = (stats.inProgressTasks / total) * 100;
+      const notStartedPercent = (stats.notStartedTasks / total) * 100;
+      
+      // Calculate angles for pie chart
+      const completedAngle = (completedPercent / 100) * 360;
+      const inProgressAngle = (inProgressPercent / 100) * 360;
+      const notStartedAngle = (notStartedPercent / 100) * 360;
+      
+      pieChart.innerHTML = `
+        <div class="pie-segment" style="background: var(--success); transform: rotate(0deg) skewY(-${90 - completedAngle/2}deg);"></div>
+        <div class="pie-segment" style="background: var(--accent); transform: rotate(${completedAngle}deg) skewY(-${90 - inProgressAngle/2}deg);"></div>
+        <div class="pie-segment" style="background: var(--muted); transform: rotate(${completedAngle + inProgressAngle}deg) skewY(-${90 - notStartedAngle/2}deg);"></div>
+      `;
+      
+      pieLegend.innerHTML = `
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--success);"></div>
+          <div>Completed (${stats.completedTasks})</div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--accent);"></div>
+          <div>In Progress (${stats.inProgressTasks})</div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--muted);"></div>
+          <div>Not Started (${stats.notStartedTasks})</div>
+        </div>
+      `;
+    }
+
+    /* -------------------------
+       Navigation Badges
+       ------------------------- */
+    function updateNavBadges() {
+      if (CURRENT_USER.role !== 'leader') return;
+      
+      const taskRequestsCount = getTaskRequestCount();
+      const membershipRequestsCount = STATE.membershipRequests.length;
+      
+      // Update tasks tab badge
+      const tasksTab = document.querySelector('.nav-tab[data-section="tasks"]');
+      if (tasksTab) {
+        let badge = tasksTab.querySelector('.badge');
+        if (taskRequestsCount > 0) {
+          if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'badge';
+            tasksTab.appendChild(badge);
+          }
+          badge.textContent = taskRequestsCount;
+        } else if (badge) {
+          badge.remove();
+        }
+      }
+      
+      // Update requests tab badge
+      const requestsTab = document.querySelector('.nav-tab[data-section="requests"]');
+      if (requestsTab) {
+        let badge = requestsTab.querySelector('.badge');
+        if (membershipRequestsCount > 0) {
+          if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'badge';
+            requestsTab.appendChild(badge);
+          }
+          badge.textContent = membershipRequestsCount;
+        } else if (badge) {
+          badge.remove();
+        }
+      }
+    }
+
+    /* -------------------------
+       Rendering: header, sidebar, auth, leader/member screens
+       ------------------------- */
+    const authArea = document.getElementById('auth-area');
+    const appArea = document.getElementById('app-area');
+    const headerActions = document.getElementById('header-actions');
+    const sidebarUser = document.getElementById('sidebar-user');
+    const sidebarActions = document.getElementById('sidebar-actions');
+    const navTabs = document.getElementById('nav-tabs');
+    const dashboardSection = document.getElementById('dashboard-section');
+    const membersSection = document.getElementById('members-section');
+    const tasksSection = document.getElementById('tasks-section');
+    const teamsSection = document.getElementById('teams-section');
+    const requestsSection = document.getElementById('requests-section');
+    const activitySection = document.getElementById('activity-section');
+    const dashboardContent = document.getElementById('dashboard-content');
+    const membersContent = document.getElementById('members-content');
+    const tasksContent = document.getElementById('tasks-content');
+    const teamsContent = document.getElementById('teams-content');
+    const requestsContent = document.getElementById('requests-content');
+    const activityContentTab = document.getElementById('activity-content-tab');
+    const modalRoot = document.getElementById('modal-root');
+
+    function renderHeader(){
+      headerActions.innerHTML = '';
+      if(CURRENT_USER){
+        // Theme toggle button
+        const themeBtn = document.createElement('button');
+        themeBtn.className = 'theme-toggle';
+        themeBtn.innerHTML = '<span class="theme-icon">🌓</span> Theme';
+        themeBtn.onclick = toggleTheme;
+        
+        // Logout button
+        const logoutBtn = document.createElement('button');
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.onclick = logout;
+        
+        headerActions.appendChild(themeBtn);
+        headerActions.appendChild(logoutBtn);
+      }
+    }
+
+    function renderSidebar(){
+      sidebarUser.innerHTML = '';
+      sidebarActions.innerHTML = '';
+      
+      if(!CURRENT_USER){
+        sidebarUser.innerHTML = '<div class="muted">Not signed in</div>';
+        sidebarActions.innerHTML = '<div class="muted">Sign in to access dashboards.</div>';
+        return;
+      }
+      
+      const avatar = document.createElement('div'); 
+      avatar.className = 'avatar'; 
+      avatar.textContent = CURRENT_USER.name.split(' ').map(s=>s[0]?.toUpperCase()||'').slice(0,2).join('');
+      
+      const info = document.createElement('div'); 
+      info.innerHTML = `
+        <div style="font-weight:700">${CURRENT_USER.name}</div>
+        <div class="muted">${CURRENT_USER.username} • ${CURRENT_USER.role}</div>
+      `;
+      
+      const wrap = document.createElement('div'); 
+      wrap.style.display='flex'; 
+      wrap.style.gap='12px'; 
+      wrap.style.alignItems='center'; 
+      wrap.appendChild(avatar); 
+      wrap.appendChild(info);
+      
+      sidebarUser.appendChild(wrap);
+    }
+
+    function renderActivityTab(){
+      if (!activityContentTab) return;
+      
+      activityContentTab.innerHTML = '';
+      
+      if(!CURRENT_USER){
+        const m = document.createElement('div'); 
+        m.className = 'muted'; 
+        m.textContent = 'Sign in to see activity.'; 
+        activityContentTab.appendChild(m); 
+        return;
+      }
+      
+      if(CURRENT_USER.role !== 'leader'){
+        const m = document.createElement('div'); 
+        m.className = 'muted'; 
+        m.textContent = 'Activity visible to leaders only.'; 
+        activityContentTab.appendChild(m); 
+        return;
+      }
+      
+      const wrapper = document.createElement('div');
+      if (STATE.activity.length === 0) {
+        wrapper.innerHTML = '<div class="muted">No activity yet.</div>';
+      } else {
+        // Show only 3-4 recent activities
+        STATE.activity.slice(0, 4).forEach(a=>{
+          const d = document.createElement('div'); 
+          d.style.padding='8px'; 
+          d.style.borderBottom='1px solid var(--border)';
+          d.innerHTML = `
+            <div style="font-size:13px">${a.text}</div>
+            <div class="muted" style="font-size:12px">${new Date(a.time).toLocaleString()}</div>
+          `;
+          wrapper.appendChild(d);
+        });
+      }
+      activityContentTab.appendChild(wrapper);
+    }
+
+    function renderAuth(view='login'){
+      appArea.style.display = 'none';
+      authArea.style.display = 'block';
+      authArea.innerHTML = '';
+      
+      if(view === 'login'){
+        const tpl = document.getElementById('login-template');
+        authArea.appendChild(tpl.content.cloneNode(true));
+        
+        // Setup password toggle
+        const passwordInput = document.getElementById('login-password');
+        const toggleButton = document.getElementById('toggle-password');
+        setupPasswordToggle(passwordInput, toggleButton);
+        
+        // Setup enter key navigation
+        setupEnterKeyNavigation();
+        
+        document.getElementById('btn-show-signup').onclick = ()=>renderAuth('signup');
+        document.getElementById('btn-forgot-password').onclick = ()=>renderAuth('forgot');
+        document.getElementById('btn-login').onclick = ()=>{
+          const u = document.getElementById('login-username').value.trim();
+          const p = document.getElementById('login-password').value;
+          if(!u || !p){ showNotification('Enter username and password', 'error'); return; }
+          const res = login(u,p);
+          if(!res.ok) showNotification(res.msg, 'error'); else { authArea.style.display='none'; appArea.style.display='block'; }
+        };
+      } else if (view === 'forgot') {
+        const tpl = document.getElementById('forgot-password-template');
+        authArea.appendChild(tpl.content.cloneNode(true));
+        document.getElementById('btn-back-to-login').onclick = ()=>renderAuth('login');
+        document.getElementById('btn-reset-password').onclick = ()=>{
+          const username = document.getElementById('reset-username').value.trim();
+          if(!username){ showNotification('Enter your username', 'error'); return; }
+          const res = resetPassword(username);
+          if(res.ok){
+            renderAuth('change');
+          } else {
+            showNotification(res.msg, 'error');
+          }
+        };
+      } else if (view === 'change') {
+        const tpl = document.getElementById('change-password-template');
+        authArea.appendChild(tpl.content.cloneNode(true));
+        
+        // Setup password toggles
+        const newPasswordInput = document.getElementById('new-password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+        const toggleNewPassword = document.getElementById('toggle-new-password');
+        const toggleConfirmPassword = document.getElementById('toggle-confirm-password');
+        
+        setupPasswordToggle(newPasswordInput, toggleNewPassword);
+        setupPasswordToggle(confirmPasswordInput, toggleConfirmPassword);
+        
+        document.getElementById('btn-cancel-change').onclick = ()=>renderAuth('login');
+        document.getElementById('btn-change-password').onclick = ()=>{
+          const newPass = document.getElementById('new-password').value;
+          const confirmPass = document.getElementById('confirm-password').value;
+          const res = changePassword(newPass, confirmPass);
+          if(res.ok){
+            showNotification('Password changed successfully. Please login with your new password.', 'success');
+            renderAuth('login');
+          } else {
+            showNotification(res.msg, 'error');
+          }
+        };
+      } else {
+        const tpl = document.getElementById('signup-template');
+        authArea.appendChild(tpl.content.cloneNode(true));
+        
+        // Setup password toggle
+        const passwordInput = document.getElementById('su-password');
+        const toggleButton = document.getElementById('toggle-signup-password');
+        setupPasswordToggle(passwordInput, toggleButton);
+        
+        // Setup enter key navigation for signup
+        setupSignupEnterKeyNavigation();
+        
+        document.getElementById('btn-show-login').onclick = ()=>renderAuth('login');
+        document.getElementById('btn-signup').onclick = ()=>{
+          const name = document.getElementById('su-name').value.trim();
+          const email = document.getElementById('su-email').value.trim();
+          const username = document.getElementById('su-username').value.trim();
+          const password = document.getElementById('su-password').value;
+          if(!name || !username || !password || !email) { showNotification('Fill all fields', 'error'); return; }
+          const res = signupRequest(name, email, username, password);
+          if(!res.ok) showNotification(res.msg, 'error'); else { 
+            showNotification('Request sent to leader(s). You will be notified after approval.', 'success'); 
+            renderAuth('login'); 
+          }
+        };
+      }
+    }
+
+    function renderApp(){
+      renderHeader(); 
+      renderSidebar(); 
+      renderActivityTab();
+      
+      if(!CURRENT_USER){ 
+        renderAuth('login'); 
+        return; 
+      }
+      
+      authArea.style.display='none'; 
+      appArea.style.display='block';
+      
+      if(CURRENT_USER.role === 'leader') {
+        renderLeaderNav();
+        showSection('dashboard');
+      } else {
+        renderMember();
+      }
+      
+      updateNavBadges();
+    }
+
+    function renderLeaderNav(){
+      navTabs.innerHTML = '';
+      
+      const tabs = [
+        { id: 'dashboard', label: 'Dashboard' },
+        { id: 'members', label: 'Team Members' },
+        { id: 'tasks', label: 'Tasks' },
+        { id: 'teams', label: 'Teams' },
+        { id: 'requests', label: 'Members Requests' },
+        { id: 'activity', label: 'Activity' }
+      ];
+      
+      tabs.forEach(tab => {
+        const button = document.createElement('button');
+        button.className = 'nav-tab';
+        button.setAttribute('data-section', tab.id);
+        button.textContent = tab.label;
+        button.onclick = () => showSection(tab.id);
+        navTabs.appendChild(button);
+      });
+    }
+
+    function showSection(sectionId){
+      // Hide all sections
+      dashboardSection.classList.remove('active');
+      membersSection.classList.remove('active');
+      tasksSection.classList.remove('active');
+      teamsSection.classList.remove('active');
+      requestsSection.classList.remove('active');
+      activitySection.classList.remove('active');
+      
+      // Remove active class from all tabs
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Show selected section and activate tab
+      document.getElementById(`${sectionId}-section`).classList.add('active');
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        if (tab.getAttribute('data-section') === sectionId) {
+          tab.classList.add('active');
+        }
+      });
+      
+      // Render section content
+      if (sectionId === 'dashboard') {
+        renderLeaderDashboard();
+      } else if (sectionId === 'members') {
+        renderLeaderMembers();
+      } else if (sectionId === 'tasks') {
+        renderLeaderTasks();
+      } else if (sectionId === 'teams') {
+        renderLeaderTeams();
+      } else if (sectionId === 'requests') {
+        renderLeaderRequests();
+      } else if (sectionId === 'activity') {
+        renderLeaderActivity();
+      }
+    }
+
+    /* -------------------------
+       Leader rendering: dashboard, members, tasks, teams, activity, requests
+       ------------------------- */
+    function renderLeaderDashboard(){
+      dashboardContent.innerHTML = '';
+      const tpl = document.getElementById('leader-dashboard-template');
+      dashboardContent.appendChild(tpl.content.cloneNode(true));
+
+      // Render leader profile
+      renderLeaderProfile();
+      
+      renderDashboardStats();
+      renderPieChart();
+      renderRecentRequests();
+      
+      // Set up "View All Requests" button
+      document.getElementById('btn-view-all-requests').onclick = () => {
+        showSection('requests');
+      };
+    }
+
+    function renderLeaderProfile() {
+      const leaderProfileDisplay = document.getElementById('leader-profile-display');
+      if (!leaderProfileDisplay) return;
+      
+      leaderProfileDisplay.innerHTML = `
+        <div class="leader-profile">
+          <div class="leader-avatar">${CURRENT_USER.name.split(' ').map(s=>s[0]?.toUpperCase()||'').slice(0,2).join('')}</div>
+          <div class="leader-info">
+            <div class="leader-name">${CURRENT_USER.name}</div>
+            <div class="leader-role">Team Leader</div>
+            <div class="muted">${CURRENT_USER.email}</div>
+            <div class="leader-details">
+              <div class="detail-item">
+                <div class="detail-label">Username</div>
+                <div class="detail-value">${CURRENT_USER.username}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Member Since</div>
+                <div class="detail-value">${new Date(CURRENT_USER.createdAt).toLocaleDateString()}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Role</div>
+                <div class="detail-value">${CURRENT_USER.role}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLeaderMembers(){
+      membersContent.innerHTML = '';
+      const tpl = document.getElementById('leader-members-template');
+      membersContent.appendChild(tpl.content.cloneNode(true));
+
+      document.getElementById('search-members').oninput = ()=> renderMembersList();
+      
+      renderMembersList();
+    }
+
+    function renderLeaderTasks(){
+      tasksContent.innerHTML = '';
+      const tpl = document.getElementById('leader-tasks-template');
+      tasksContent.appendChild(tpl.content.cloneNode(true));
+
+      document.getElementById('btn-new-task-from-tab').onclick = ()=> openTaskModal();
+      renderTasksList();
+    }
+
+    function renderLeaderTeams(){
+      teamsContent.innerHTML = '';
+      const tpl = document.getElementById('leader-teams-template');
+      teamsContent.appendChild(tpl.content.cloneNode(true));
+
+      document.getElementById('btn-new-team-from-tab').onclick = ()=> openTeamModal();
+      renderTeamsList();
+    }
+
+    function renderLeaderActivity(){
+      activityContentTab.innerHTML = '';
+      const tpl = document.getElementById('leader-activity-template');
+      activityContentTab.appendChild(tpl.content.cloneNode(true));
+
+      renderActivityTab();
+    }
+
+    function renderLeaderRequests(){
+      requestsContent.innerHTML = '';
+      const tpl = document.getElementById('leader-requests-template');
+      requestsContent.appendChild(tpl.content.cloneNode(true));
+
+      renderRequests();
+    }
+
+    /* -------------------------
+       Member rendering
+       ------------------------- */
+    function renderMember(){
+      // Clear navigation tabs for members
+      navTabs.innerHTML = '';
+      
+      // Show only the dashboard section for members
+      dashboardSection.classList.add('active');
+      membersSection.classList.remove('active');
+      tasksSection.classList.remove('active');
+      teamsSection.classList.remove('active');
+      requestsSection.classList.remove('active');
+      activitySection.classList.remove('active');
+      
+      // Render member dashboard
+      dashboardContent.innerHTML = '';
+      const tpl = document.getElementById('member-dashboard-template');
+      dashboardContent.appendChild(tpl.content.cloneNode(true));
+      
+      // Set member name
+      document.getElementById('member-name').textContent = CURRENT_USER.name;
+      
+      // Render member stats
+      renderMemberStats();
+      
+      // Render member tasks
+      renderMemberTasks();
+      
+      // Set up task request button
+      document.getElementById('btn-request-new').onclick = ()=> {
+        const taskDescription = prompt('Please describe the task you are requesting:');
+        if (taskDescription) {
+          if (requestTask(taskDescription)) {
+            showNotification('Task request submitted to leaders', 'success');
+          }
+        }
+      };
+    }
+
+    function renderMemberTasks(){
+      const myRoot = document.getElementById('my-tasks'); 
+      if (!myRoot) return;
+      
+      myRoot.innerHTML = '';
+      const tasks = STATE.tasks.filter(t => t.assignee === CURRENT_USER.id);
+      
+      if(tasks.length === 0){ 
+        myRoot.innerHTML = '<div class="muted">No tasks assigned yet.</div>'; 
+        return; 
+      }
+      
+      tasks.forEach(t => {
+        const div = document.createElement('div'); 
+        div.className = 'task';
+        const teamBadge = t.isTeamTask ? ' <span class="chip">Team Task</span>' : '';
+        const privateHtml = t.privateNotes ? `<div class="muted">Private note: ${escapeHtml(t.privateNotes)}</div>` : '';
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:700">${t.title}${teamBadge}</div>
+            <div class="muted">${t.description}</div>${privateHtml}
+          </div>
+          <div class="right">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${t.progress}%"></div>
+            </div>
+            <div class="h8"></div>
+            <div class="controls">
+              <button data-id="${t.id}" class="update-task">Update</button>
+              <button data-id="${t.id}" class="view-task">View</button>
+            </div>
+          </div>
+        `;
+        myRoot.appendChild(div);
+      });
+      
+      // Fix: Add proper event listeners for member task buttons
+      myRoot.querySelectorAll('.update-task').forEach(b => {
+        b.onclick = (e) => {
+          const taskId = e.target.dataset.id;
+          openUpdateProgressModal(taskId);
+        };
+      });
+      
+      myRoot.querySelectorAll('.view-task').forEach(b => {
+        b.onclick = (e) => {
+          const taskId = e.target.dataset.id;
+          openTaskViewModal(taskId);
+        };
+      });
+    }
+
+    function updateRequestCount(){
+      const el = document.getElementById('requests-count');
+      if(el) el.textContent = STATE.membershipRequests.length;
+    }
+
+    function renderRecentRequests(){
+      const root = document.getElementById('recent-requests-list');
+      if (!root) return;
+      
+      root.innerHTML = '';
+      if(STATE.membershipRequests.length === 0){ 
+        root.innerHTML = '<div class="muted">No pending requests.</div>'; 
+        return; 
+      }
+      
+      // Show only 3 most recent requests
+      const recentRequests = STATE.membershipRequests.slice().reverse().slice(0, 3);
+      
+      recentRequests.forEach(r=>{
+        const div = document.createElement('div'); 
+        div.className = 'task';
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:700">${r.name}</div>
+            <div class="muted">${r.username} • ${r.email || ''} • requested ${new Date(r.time).toLocaleString()}</div>
+          </div>
+          <div class="right">
+            <div class="controls">
+              <button class="accept" data-id="${r.id}">Accept</button>
+              <button class="danger decline" data-id="${r.id}">Decline</button>
+            </div>
+          </div>
+        `;
+        root.appendChild(div);
+      });
+      
+      root.querySelectorAll('.accept').forEach(b => b.onclick = (e) => { 
+        if (acceptRequest(e.target.dataset.id)) {
+          showNotification('Member request accepted', 'success');
+        }
+      });
+      
+      root.querySelectorAll('.decline').forEach(b => b.onclick = (e) => { 
+        if(confirm('Decline request?')) { 
+          if (declineRequest(e.target.dataset.id)) {
+            showNotification('Member request declined', 'success');
+          }
+        } 
+      });
+    }
+
+    function renderRequests(){
+      const root = document.getElementById('requests-list');
+      if (!root) return;
+      
+      root.innerHTML = '';
+      if(STATE.membershipRequests.length === 0){ 
+        root.innerHTML = '<div class="muted">No pending requests.</div>'; 
+        return; 
+      }
+      
+      STATE.membershipRequests.slice().reverse().forEach(r=>{
+        const div = document.createElement('div'); 
+        div.className = 'task';
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:700">${r.name}</div>
+            <div class="muted">${r.username} • ${r.email || ''} • requested ${new Date(r.time).toLocaleString()}</div>
+          </div>
+          <div class="right">
+            <div class="controls">
+              <button class="accept" data-id="${r.id}">Accept</button>
+              <button class="danger decline" data-id="${r.id}">Decline</button>
+            </div>
+          </div>
+        `;
+        root.appendChild(div);
+      });
+      
+      root.querySelectorAll('.accept').forEach(b => b.onclick = (e) => { 
+        if (acceptRequest(e.target.dataset.id)) {
+          showNotification('Member request accepted', 'success');
+        }
+      });
+      
+      root.querySelectorAll('.decline').forEach(b => b.onclick = (e) => { 
+        if(confirm('Decline request?')) { 
+          if (declineRequest(e.target.dataset.id)) {
+            showNotification('Member request declined', 'success');
+          }
+        } 
+      });
+    }
+
+    function renderMembersList(){
+      const root = document.getElementById('members-list'); 
+      if (!root) return;
+      
+      root.innerHTML = '';
+      const q = (document.getElementById('search-members')?.value || '').trim().toLowerCase();
+      let members = STATE.users.filter(u => u.role === 'member');
+      
+      if(q) members = members.filter(m => 
+        (m.name||'').toLowerCase().includes(q) || 
+        (m.username||'').toLowerCase().includes(q) || 
+        (m.email||'').toLowerCase().includes(q)
+      );
+      
+      if(members.length === 0){ 
+        root.innerHTML = '<div class="muted">No team members yet.</div>'; 
+        return; 
+      }
+      
+      members.forEach(m => {
+        const count = STATE.tasks.filter(t => t.assignee === m.id).length;
+        const div = document.createElement('div'); 
+        div.className = 'task';
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:700">${m.name}</div>
+            <div class="muted">${m.username} • ${m.email || ''} • ${count} task(s)</div>
+          </div>
+          <div class="right">
+            <div class="controls">
+              <button data-id="${m.id}" class="danger delete-member">Delete</button>
+            </div>
+          </div>
+        `;
+        root.appendChild(div);
+      });
+      
+      root.querySelectorAll('.delete-member').forEach(b => b.onclick = (e) => { 
+        if(confirm('Delete member and their tasks?')) {
+          if (removeMember(e.target.dataset.id)) {
+            showNotification('Member deleted successfully', 'success');
+          }
+        } 
+      });
+    }
+
+    /* -------------------------
+       Task Assignment Modal
+       ------------------------- */
+    function openTaskModal(taskToEdit = null) {
+      const modal = document.createElement('div');
+      modal.className = 'modal-back';
+      modal.innerHTML = `
+        <div class="modal">
+          <h2>${taskToEdit ? 'Edit Task' : 'Assign New Task'}</h2>
+          <div class="h12"></div>
+          <form id="task-form">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div>
+                <label for="task-title">Task Title</label>
+                <input type="text" id="task-title" placeholder="Enter task title" value="${taskToEdit ? escapeHtml(taskToEdit.title) : ''}" required />
+              </div>
+              <div>
+                <label for="task-assignee">Assign To</label>
+                <select id="task-assignee" required>
+                  <option value="">Select team member</option>
+                  ${STATE.users.filter(u => u.role === 'member').map(u => 
+                    `<option value="${u.id}" ${taskToEdit && taskToEdit.assignee === u.id ? 'selected' : ''}>${u.name}</option>`
+                  ).join('')}
+                </select>
+              </div>
+            </div>
+            <div class="h12"></div>
+            <label for="task-description">Description</label>
+            <textarea id="task-description" placeholder="Describe the task..." class="large" required>${taskToEdit ? escapeHtml(taskToEdit.description) : ''}</textarea>
+            <div class="h12"></div>
+            <label for="task-progress">Progress</label>
+            <input type="range" id="task-progress" min="0" max="100" value="${taskToEdit ? taskToEdit.progress : '0'}" />
+            <div style="text-align:center;margin-top:8px">
+              <span id="progress-value">${taskToEdit ? taskToEdit.progress : '0'}%</span>
+            </div>
+            <div class="h12"></div>
+            <label for="task-private-notes">Private Notes (only visible to leaders)</label>
+            <textarea id="task-private-notes" placeholder="Add private notes...">${taskToEdit ? escapeHtml(taskToEdit.privateNotes) : ''}</textarea>
+            <div class="h12"></div>
+            <div class="controls">
+              <button type="submit">${taskToEdit ? 'Update Task' : 'Assign Task'}</button>
+              <button type="button" class="ghost" id="btn-cancel-task">Cancel</button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      modalRoot.appendChild(modal);
+      
+      // Update progress value display
+      const progressSlider = document.getElementById('task-progress');
+      const progressValue = document.getElementById('progress-value');
+      progressSlider.addEventListener('input', function() {
+        progressValue.textContent = this.value + '%';
+      });
+      
+      // Form submission
+      document.getElementById('task-form').onsubmit = function(e) {
+        e.preventDefault();
+        
+        const title = document.getElementById('task-title').value.trim();
+        const description = document.getElementById('task-description').value.trim();
+        const assignee = document.getElementById('task-assignee').value;
+        const progress = document.getElementById('task-progress').value;
+        const privateNotes = document.getElementById('task-private-notes').value.trim();
+        
+        if (!title || !description || !assignee) {
+          showNotification('Please fill in all required fields', 'error');
+          return;
+        }
+        
+        if (taskToEdit) {
+          // Update existing task
+          if (updateTask(taskToEdit.id, {
+            title,
+            description,
+            assignee,
+            progress: parseInt(progress),
+            privateNotes
+          })) {
+            showNotification('Task updated successfully', 'success');
+          }
+        } else {
+          // Create new task
+          if (createTask({
+            title,
+            description,
+            assignee,
+            creator: CURRENT_USER.id,
+            progress: parseInt(progress),
+            privateNotes
+          })) {
+            showNotification('Task assigned successfully', 'success');
+          }
+        }
+        
+        modal.remove();
+      };
+      
+      // Cancel button
+      document.getElementById('btn-cancel-task').onclick = function() {
+        modal.remove();
+      };
+      
+      // Close modal when clicking outside
+      modal.onclick = function(e) {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      };
+    }
+
+    /* -------------------------
+       Task Update Modal (for members)
+       ------------------------- */
+    function openUpdateProgressModal(taskId) {
+      const task = STATE.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-back';
+      modal.innerHTML = `
+        <div class="modal">
+          <h2>Update Task Progress</h2>
+          <div class="h12"></div>
+          <form id="update-task-form">
+            <div>
+              <div style="font-weight:700">${task.title}</div>
+              <div class="muted">${task.description}</div>
+            </div>
+            <div class="h12"></div>
+            <label for="update-progress">Progress</label>
+            <input type="range" id="update-progress" min="0" max="100" value="${task.progress}" />
+            <div style="text-align:center;margin-top:8px">
+              <span id="update-progress-value">${task.progress}%</span>
+            </div>
+            <div class="h12"></div>
+            <label for="status-note">Status Note (optional)</label>
+            <textarea id="status-note" placeholder="Add a note about your progress..."></textarea>
+            <div class="h12"></div>
+            <div class="controls">
+              <button type="submit">Update Progress</button>
+              <button type="button" class="ghost" id="btn-cancel-update">Cancel</button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      modalRoot.appendChild(modal);
+      
+      // Update progress value display
+      const progressSlider = document.getElementById('update-progress');
+      const progressValue = document.getElementById('update-progress-value');
+      progressSlider.addEventListener('input', function() {
+        progressValue.textContent = this.value + '%';
+      });
+      
+      // Form submission
+      document.getElementById('update-task-form').onsubmit = function(e) {
+        e.preventDefault();
+        
+        const progress = document.getElementById('update-progress').value;
+        const statusNote = document.getElementById('status-note').value.trim();
+        
+        if (updateTask(taskId, {
+          progress: parseInt(progress)
+        })) {
+          if (statusNote) {
+            addStatusNote(taskId, statusNote);
+          }
+          showNotification('Task progress updated successfully', 'success');
+        }
+        
+        modal.remove();
+      };
+      
+      // Cancel button
+      document.getElementById('btn-cancel-update').onclick = function() {
+        modal.remove();
+      };
+      
+      // Close modal when clicking outside
+      modal.onclick = function(e) {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      };
+    }
+
+    /* -------------------------
+       Task View Modal (for members)
+       ------------------------- */
+    function openTaskViewModal(taskId) {
+      const task = STATE.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-back';
+      modal.innerHTML = `
+        <div class="modal">
+          <h2>Task Details</h2>
+          <div class="h12"></div>
+          <div>
+            <div style="font-weight:700;font-size:18px">${task.title}</div>
+            <div class="muted">Assigned by: ${getUserName(task.creator)} • Created: ${new Date(task.created).toLocaleDateString()}</div>
+          </div>
+          <div class="h12"></div>
+          <div>
+            <label>Description</label>
+            <div style="padding:10px;background:var(--border);border-radius:8px">${task.description}</div>
+          </div>
+          <div class="h12"></div>
+          <div>
+            <label>Progress</label>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${task.progress}%"></div>
+            </div>
+            <div style="text-align:center;margin-top:8px">
+              <span>${task.progress}%</span>
+            </div>
+          </div>
+          ${task.statusNotes && task.statusNotes.length > 0 ? `
+            <div class="h12"></div>
+            <div>
+              <label>Status Notes</label>
+              <div style="max-height:200px;overflow-y:auto">
+                ${task.statusNotes.map(note => `
+                  <div style="padding:8px;border-bottom:1px solid var(--border)">
+                    <div>${note.text}</div>
+                    <div class="muted" style="font-size:12px">${getUserName(note.authorId)} • ${new Date(note.time).toLocaleString()}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          <div class="h12"></div>
+          <div class="controls">
+            <button type="button" class="ghost" id="btn-close-view">Close</button>
+          </div>
+        </div>
+      `;
+      
+      modalRoot.appendChild(modal);
+      
+      // Close button
+      document.getElementById('btn-close-view').onclick = function() {
+        modal.remove();
+      };
+      
+      // Close modal when clicking outside
+      modal.onclick = function(e) {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      };
+    }
+
+    /* -------------------------
+       Team Creation Modal
+       ------------------------- */
+    function openTeamModal(teamToEdit = null) {
+      const modal = document.createElement('div');
+      modal.className = 'modal-back';
+      modal.innerHTML = `
+        <div class="modal">
+          <h2>${teamToEdit ? 'Edit Team' : 'Create New Team'}</h2>
+          <div class="h12"></div>
+          <form id="team-form">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div>
+                <label for="team-name">Team Name</label>
+                <input type="text" id="team-name" placeholder="Enter team name" value="${teamToEdit ? escapeHtml(teamToEdit.name) : ''}" required />
+              </div>
+              <div>
+                <label for="team-description">Description</label>
+                <input type="text" id="team-description" placeholder="Team description" value="${teamToEdit ? escapeHtml(teamToEdit.description) : ''}" />
+              </div>
+            </div>
+            <div class="h12"></div>
+            <label for="team-members">Select Team Members</label>
+            <div id="team-members-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+              ${STATE.users.filter(u => u.role === 'member').map(member => `
+                <div style="margin-bottom: 8px;">
+                  <input type="checkbox" id="member-${member.id}" value="${member.id}" ${teamToEdit && teamToEdit.members.includes(member.id) ? 'checked' : ''} />
+                  <label for="member-${member.id}" style="display: inline; margin-left: 8px;">${member.name} (${member.username})</label>
+                </div>
+              `).join('')}
+            </div>
+            <div class="h12"></div>
+            <div class="controls">
+              <button type="submit">${teamToEdit ? 'Update Team' : 'Create Team'}</button>
+              <button type="button" class="ghost" id="btn-cancel-team">Cancel</button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      modalRoot.appendChild(modal);
+      
+      // Form submission
+      document.getElementById('team-form').onsubmit = function(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('team-name').value.trim();
+        const description = document.getElementById('team-description').value.trim();
+        
+        // Get selected members
+        const selectedMembers = [];
+        document.querySelectorAll('#team-members-list input[type="checkbox"]:checked').forEach(checkbox => {
+          selectedMembers.push(checkbox.value);
+        });
+        
+        if (!name) {
+          showNotification('Please enter a team name', 'error');
+          return;
+        }
+        
+        if (selectedMembers.length === 0) {
+          showNotification('Please select at least one team member', 'error');
+          return;
+        }
+        
+        if (teamToEdit) {
+          // Update existing team
+          if (updateTeam(teamToEdit.id, {
+            name,
+            description,
+            members: selectedMembers
+          })) {
+            showNotification('Team updated successfully', 'success');
+          }
+        } else {
+          // Create new team
+          if (createTeam(name, description, selectedMembers)) {
+            showNotification('Team created successfully', 'success');
+          }
+        }
+        
+        modal.remove();
+      };
+      
+      // Cancel button
+      document.getElementById('btn-cancel-team').onclick = function() {
+        modal.remove();
+      };
+      
+      // Close modal when clicking outside
+      modal.onclick = function(e) {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      };
+    }
+
+    function renderTasksList(filter = 'all') {
+      const root = document.getElementById('tasks-list');
+      if (!root) return;
+      
+      root.innerHTML = '';
+      let tasks = STATE.tasks;
+      
+      // Apply filter if specified
+      if (filter === 'completed') {
+        tasks = tasks.filter(t => t.progress === 100);
+      } else if (filter === 'in-progress') {
+        tasks = tasks.filter(t => t.progress > 0 && t.progress < 100);
+      } else if (filter === 'not-started') {
+        tasks = tasks.filter(t => t.progress === 0);
+      }
+      
+      if (tasks.length === 0) {
+        root.innerHTML = '<div class="muted">No tasks found.</div>';
+        return;
+      }
+      
+      tasks.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'task';
+        const teamBadge = t.isTeamTask ? ' <span class="chip">Team Task</span>' : '';
+        const privateHtml = t.privateNotes ? `<div class="muted">Private note: ${escapeHtml(t.privateNotes)}</div>` : '';
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:700">${t.title}${teamBadge}</div>
+            <div class="muted">Assigned to: ${getUserName(t.assignee)} • Created: ${new Date(t.created).toLocaleDateString()}</div>
+            <div>${t.description}</div>${privateHtml}
+          </div>
+          <div class="right">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${t.progress}%"></div>
+            </div>
+            <div class="h8"></div>
+            <div class="controls">
+              <button data-id="${t.id}" class="edit-task">Edit</button>
+              <button data-id="${t.id}" class="danger delete-task">Delete</button>
+            </div>
+          </div>
+        `;
+        root.appendChild(div);
+      });
+      
+      // Add event listeners
+      root.querySelectorAll('.edit-task').forEach(b => {
+        b.onclick = (e) => {
+          const taskId = e.target.dataset.id;
+          const task = STATE.tasks.find(t => t.id === taskId);
+          if (task) {
+            openTaskModal(task);
+          }
+        };
+      });
+      
+      root.querySelectorAll('.delete-task').forEach(b => {
+        b.onclick = (e) => {
+          const taskId = e.target.dataset.id;
+          const task = STATE.tasks.find(t => t.id === taskId);
+          if (task && confirm(`Are you sure you want to delete the task "${task.title}"?`)) {
+            if (deleteTask(taskId)) {
+              showNotification('Task deleted successfully', 'success');
+            }
+          }
+        };
+      });
+    }
+
+    function renderTeamsList() {
+      const root = document.getElementById('teams-list');
+      if (!root) return;
+      
+      root.innerHTML = '';
+      
+      if (STATE.teams.length === 0) {
+        root.innerHTML = '<div class="muted">No teams created yet.</div>';
+        return;
+      }
+      
+      STATE.teams.forEach(team => {
+        const div = document.createElement('div');
+        div.className = 'task';
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:700">${team.name}</div>
+            <div class="muted">${team.description || 'No description'}</div>
+            <div class="team-member-list">
+              ${team.members.map(memberId => {
+                const member = getUserById(memberId);
+                return member ? `<div class="team-member">${member.name}</div>` : '';
+              }).join('')}
+            </div>
+          </div>
+          <div class="right">
+            <div class="controls">
+              <button data-id="${team.id}" class="edit-team">Edit</button>
+              <button data-id="${team.id}" class="danger delete-team">Delete</button>
+            </div>
+          </div>
+        `;
+        root.appendChild(div);
+      });
+      
+      // Add event listeners for team actions
+      root.querySelectorAll('.edit-team').forEach(b => {
+        b.onclick = (e) => {
+          const teamId = e.target.dataset.id;
+          const team = STATE.teams.find(t => t.id === teamId);
+          if (team) {
+            openTeamModal(team);
+          }
+        };
+      });
+      
+      root.querySelectorAll('.delete-team').forEach(b => {
+        b.onclick = (e) => {
+          const teamId = e.target.dataset.id;
+          const team = STATE.teams.find(t => t.id === teamId);
+          if (team && confirm(`Are you sure you want to delete the team "${team.name}"?`)) {
+            if (deleteTeam(teamId)) {
+              showNotification('Team deleted successfully', 'success');
+            }
+          }
+        };
+      });
+    }
+
+    /* -------------------------
+       Initial render + autosave
+       ------------------------- */
+    // Initialize theme
+    initTheme();
+    
+    // Render the app based on current user state
+    if (CURRENT_USER) {
+      // User is already logged in, show the app directly
+      appArea.style.display = 'block';
+      authArea.style.display = 'none';
+      renderApp();
+    } else {
+      // No user logged in, show login screen
+      renderApp();
+    }
+    
+    // Save state before unloading
+    window.addEventListener('beforeunload', ()=> persist());
+
+    // If there are pending membership requests, add a one-time activity note
+    (function notifyPending() {
+      if(STATE.membershipRequests.length && STATE.users.some(u => u.role === 'leader')) {
+        const exists = STATE.activity.some(a => a.text && a.text.includes('pending membership request'));
+        if(!exists) {
+          STATE.activity.unshift({ id: uid('a_'), text: `There are ${STATE.membershipRequests.length} pending membership request(s).`, time: Date.now() });
+          persist();
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
