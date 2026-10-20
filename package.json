@@ -1,5 +1,6 @@
 {
-  "name": "team-task-tracker",
+  "name": "teamtask-tracker",
+  "description": "Enterprise-grade collaborative task, sprint, and team productivity tracking suite with real-time sync.",
   "private": true,
   "version": "0.0.0",
   "type": "module",

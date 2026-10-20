@@ -118,11 +118,11 @@ export default function Login({ members, onLogin, theme, toggleTheme }) {
             <div className="login-logo-symbol">
               <Sparkles size={18} fill="white" />
             </div>
-            SyncFlow
+            TeamTask-Tracker
           </div>
 
           <div className="login-header">
-            <h2>{isRegister ? 'Join SyncFlow' : 'Welcome back'}</h2>
+            <h2>{isRegister ? 'Join TeamTask-Tracker' : 'Welcome back'}</h2>
             <p>{isRegister ? 'Create an account to collaborate with your team.' : 'Sign in to access your projects and tasks.'}</p>
           </div>
 
@@ -322,7 +322,7 @@ export default function Login({ members, onLogin, theme, toggleTheme }) {
               textAlign: 'left'
             }}
           >
-            SyncFlow enables distributed teams to manage complex project workflows, analyze task productivity trends, and maintain tight delivery schedules inside a gorgeous, professional interface.
+            TeamTask-Tracker enables distributed teams to manage complex project workflows, analyze task productivity trends, and maintain tight delivery schedules inside a gorgeous, professional interface.
           </p>
 
           {/* Interactive Feature Glass Card */}

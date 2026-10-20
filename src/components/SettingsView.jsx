@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, Shield, User, RefreshCw, Moon, Sun, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Settings, Shield, User, RefreshCw, Moon, Sun, Download, Upload, FileText, Database } from 'lucide-react';
 
 export default function SettingsView({ 
   currentUser, 
   onUpdateProfile, 
   theme, 
   toggleTheme, 
-  onResetWorkspaceData 
+  onResetWorkspaceData,
+  onExportJson,
+  onExportCsv,
+  onImportJson
 }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('');
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -97,7 +101,7 @@ export default function SettingsView({
       <div className="settings-section" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '24px', marginTop: '24px' }}>
         <h4>Visual Appearance</h4>
         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-          Select between light theme and dark theme for the SyncFlow workspace interface.
+          Select between light theme and dark theme for the TeamTask-Tracker workspace interface.
         </p>
         <button 
           onClick={toggleTheme} 
@@ -116,15 +120,104 @@ export default function SettingsView({
         </button>
       </div>
 
+      {/* Enterprise Data Management */}
+      <div className="settings-section" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '24px', marginTop: '24px' }}>
+        <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Database size={18} style={{ color: 'var(--primary)' }} />
+          Enterprise Data &amp; Portability
+        </h4>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+          Export full encrypted JSON snapshots or task CSV spreadsheets for auditing and offline records.
+        </p>
+        
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+          {onExportJson && (
+            <button
+              onClick={onExportJson}
+              className="btn"
+              style={{
+                width: 'auto',
+                padding: '9px 14px',
+                display: 'flex',
+                gap: '8px',
+                backgroundColor: 'var(--bg-app)',
+                border: '1px solid var(--border-color)'
+              }}
+            >
+              <Download size={15} />
+              <span>Export Workspace (JSON)</span>
+            </button>
+          )}
+
+          {onExportCsv && (
+            <button
+              onClick={onExportCsv}
+              className="btn"
+              style={{
+                width: 'auto',
+                padding: '9px 14px',
+                display: 'flex',
+                gap: '8px',
+                backgroundColor: 'var(--bg-app)',
+                border: '1px solid var(--border-color)'
+              }}
+            >
+              <FileText size={15} />
+              <span>Export Tasks (CSV)</span>
+            </button>
+          )}
+
+          {onImportJson && (
+            <>
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                accept=".json"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      try {
+                        onImportJson(event.target.result);
+                      } catch (err) {
+                        alert("Invalid backup file format: " + err.message);
+                      }
+                    };
+                    reader.readAsText(file);
+                  }
+                }}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="btn"
+                style={{
+                  width: 'auto',
+                  padding: '9px 14px',
+                  display: 'flex',
+                  gap: '8px',
+                  backgroundColor: 'var(--bg-app)',
+                  border: '1px solid var(--border-color)'
+                }}
+              >
+                <Upload size={15} />
+                <span>Import Backup</span>
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* Maintenance / Danger Section */}
       <div className="settings-section" style={{ marginTop: '24px' }}>
         <h4 style={{ color: 'var(--danger-text)' }}>Workspace Maintenance</h4>
         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-          Reinitialize localStorage data back to the default demo tasks and users. This action will clear any custom changes made.
+          Reinitialize workspace data to clean production state. This action clears legacy or dummy data.
         </p>
         <button 
           onClick={() => {
-            if (confirm("Are you sure you want to reset all tasks, comments, and member profiles to initial demo settings?")) {
+            if (confirm("Are you sure you want to reset workspace data to a clean production state? This will purge legacy mock data.")) {
               onResetWorkspaceData();
             }
           }} 
@@ -140,7 +233,7 @@ export default function SettingsView({
           }}
         >
           <RefreshCw size={16} />
-          <span>Reset Workspace Data</span>
+          <span>Reset to Clean Workspace</span>
         </button>
       </div>
     </div>

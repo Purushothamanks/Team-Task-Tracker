@@ -49,9 +49,14 @@ export default function Header({
         </button>
 
         <div className="breadcrumb">
-          <span className="breadcrumb-root">SyncFlow</span>
+          <span className="breadcrumb-root">TeamTask-Tracker</span>
           <span className="breadcrumb-sep">/</span>
           <span className="breadcrumb-active">{getActiveLabel()}</span>
+        </div>
+
+        <div className="realtime-badge" title="Multi-tab peer synchronization active">
+          <span className="realtime-pulse"></span>
+          <span className="realtime-text">Live Sync</span>
         </div>
       </div>
 

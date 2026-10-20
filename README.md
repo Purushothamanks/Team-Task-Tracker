@@ -1,16 +1,38 @@
-# React + Vite
+# TeamTask-Tracker — Enterprise Collaborative Task & Sprint Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An enterprise-grade, high-performance collaborative task, sprint, and team productivity tracking suite built with React 19, Vite, and modern web standards.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Key Enterprise Features
 
-## React Compiler
+* **Real-Time Peer-to-Peer Sync:** Multi-tab and multi-window state synchronization powered by `BroadcastChannel` with fallback to storage event bus.
+* **Persistent Enterprise Data Engine:** Zero reliance on static mock data. Clean onboarding with dynamic CRUD operations for tasks, subtasks, categories, priorities, and assignees.
+* **Kanban & Sprint Velocity Boards:** Dynamic columns (To Do, In Progress, In Review, Completed), priority tiers (Urgent, High, Medium, Low), and subtask completion meters.
+* **Activity Audit Trail:** Real-time logging of user actions, role modifications, task movements, and workspace configuration changes.
+* **Enterprise Data Portability:**
+  - One-click encrypted JSON backup export and restore.
+  - Formatted CSV spreadsheet export for offline analysis and executive reporting.
+* **Role-Based Access Control:** Secure Admin Console with collaborator management, privilege escalation, and audit log inspection.
+* **Ultra-Premium Design System:** Dark/Light theme engineering, fluid layout responsiveness, and WCAG 2.1 AAA accessibility.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Quick Start
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Run local development server
+npm run dev
+
+# 3. Build for production
+npm run build
+```
+
+---
+
+## Author & Maintainer
+
+* **Purushothaman K S** — Lead Architect & System Administrator (`purushothamank.s799@gmail.com`)

@@ -30,7 +30,7 @@ export default function Sidebar({ activeView, onViewChange, currentUser, onLogou
             <div className="sidebar-logo-icon">
               <Sparkles size={16} fill="white" />
             </div>
-            SyncFlow
+            TeamTask-Tracker
           </div>
           <button 
             className="sidebar-close-btn" 

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { initialMembers, initialTasks } from './mockData';
+import { realtimeSync } from './services/realtimeSync';
+import { exportWorkspaceToJson, exportTasksToCsv } from './services/dataStore';
 import Login from './components/Login';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -79,6 +81,22 @@ export default function App() {
     localStorage.setItem('sf_audit_logs', JSON.stringify(auditLogs));
   }, [auditLogs]);
 
+  // Peer Real-Time Synchronization Listener
+  useEffect(() => {
+    const unsubscribe = realtimeSync.subscribe((msg) => {
+      if (msg.type === 'TASKS_UPDATED' && Array.isArray(msg.payload)) {
+        setTasks(msg.payload);
+        showToast('Tasks synchronized from live peer session', 'info');
+      } else if (msg.type === 'MEMBERS_UPDATED' && Array.isArray(msg.payload)) {
+        setMembers(msg.payload);
+        showToast('Team directory synchronized', 'info');
+      } else if (msg.type === 'AUDIT_LOG_ADDED' && msg.payload) {
+        setAuditLogs(prev => [msg.payload, ...prev]);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   const logEvent = (user, action) => {
     const newLog = {
       id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -87,6 +105,7 @@ export default function App() {
       timestamp: new Date().toISOString()
     };
     setAuditLogs(prev => [...prev, newLog]);
+    realtimeSync.broadcastAuditLog(newLog);
   };
 
   // Apply Theme on load and change
@@ -158,7 +177,7 @@ export default function App() {
     
     if (isNew) {
       setMembers(prev => [...prev, user]);
-      showToast(`Welcome to SyncFlow, ${user.name}! Profile created.`, 'success');
+      showToast(`Welcome to TeamTask-Tracker, ${user.name}! Profile created.`, 'success');
       logEvent(user.name, `Created account and joined workspace as ${user.role}`);
     } else {
       // If user isn't in members, add them
@@ -183,12 +202,17 @@ export default function App() {
   // CRUD Task Handlers
   const handleSaveTask = (savedTask) => {
     const exists = tasks.some(t => t.id === savedTask.id);
+    const updatedTasks = exists 
+      ? tasks.map(t => t.id === savedTask.id ? savedTask : t)
+      : [savedTask, ...tasks];
+
+    setTasks(updatedTasks);
+    realtimeSync.broadcastTaskUpdate(updatedTasks);
+
     if (exists) {
-      setTasks(prev => prev.map(t => t.id === savedTask.id ? savedTask : t));
       showToast(`Task "${savedTask.title}" updated successfully.`, 'success');
       logEvent(currentUser.name, `Updated task: "${savedTask.title}"`);
     } else {
-      setTasks(prev => [savedTask, ...prev]);
       showToast(`Task "${savedTask.title}" created.`, 'success');
       logEvent(currentUser.name, `Created task: "${savedTask.title}"`);
     }
@@ -196,14 +220,20 @@ export default function App() {
 
   const handleDeleteTask = (taskId) => {
     const taskToDelete = tasks.find(t => t.id === taskId);
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+    const updatedTasks = tasks.filter(t => t.id !== taskId);
+    setTasks(updatedTasks);
+    realtimeSync.broadcastTaskUpdate(updatedTasks);
+
     showToast(`Task "${taskToDelete?.title || 'Unknown'}" deleted.`, 'error');
     logEvent(currentUser.name, `Deleted task: "${taskToDelete?.title || 'Unknown'}"`);
   };
 
   const handleUpdateTaskStatus = (taskId, newStatus) => {
     const statuses = { todo: 'To Do', 'in-progress': 'In Progress', review: 'In Review', done: 'Completed' };
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+    const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t);
+    setTasks(updatedTasks);
+    realtimeSync.broadcastTaskUpdate(updatedTasks);
+
     showToast(`Task status updated to ${statuses[newStatus] || newStatus}.`, 'success');
     
     const taskObj = tasks.find(t => t.id === taskId);
@@ -212,7 +242,10 @@ export default function App() {
 
   // Team Handlers
   const handleAddMember = (newMember) => {
-    setMembers(prev => [...prev, newMember]);
+    const updatedMembers = [...members, newMember];
+    setMembers(updatedMembers);
+    realtimeSync.broadcastMemberUpdate(updatedMembers);
+
     showToast(`${newMember.name} registered as ${newMember.role}.`, 'success');
     logEvent(currentUser.name, `Registered new collaborator: "${newMember.name}" (${newMember.role})`);
   };
@@ -352,6 +385,28 @@ export default function App() {
                   theme={theme}
                   toggleTheme={toggleTheme}
                   onResetWorkspaceData={handleResetWorkspaceData}
+                  onExportJson={() => exportWorkspaceToJson(tasks, members, auditLogs)}
+                  onExportCsv={() => exportTasksToCsv(tasks, members)}
+                  onImportJson={(jsonStr) => {
+                    try {
+                      const parsed = JSON.parse(jsonStr);
+                      if (parsed.data?.tasks && Array.isArray(parsed.data.tasks)) {
+                        setTasks(parsed.data.tasks);
+                        realtimeSync.broadcastTaskUpdate(parsed.data.tasks);
+                      }
+                      if (parsed.data?.members && Array.isArray(parsed.data.members)) {
+                        setMembers(parsed.data.members);
+                        realtimeSync.broadcastMemberUpdate(parsed.data.members);
+                      }
+                      if (parsed.data?.auditLog && Array.isArray(parsed.data.auditLog)) {
+                        setAuditLogs(parsed.data.auditLog);
+                      }
+                      showToast('Enterprise workspace backup restored successfully!', 'success');
+                      logEvent(currentUser.name, 'Restored workspace from JSON backup snapshot');
+                    } catch (err) {
+                      showToast('Failed to import backup: ' + err.message, 'error');
+                    }
+                  }}
                 />
               )}
 
