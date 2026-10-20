@@ -9,19 +9,34 @@ export default function Header({
   toggleTheme, 
   onAddTaskClick,
   currentUser,
-  onToggleMobileMenu
+  onToggleMobileMenu,
+  auditLog = []
 }) {
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: "Marcus Chen moved 'CI/CD Pipeline' to Review", time: "10 mins ago", read: false },
-    { id: 2, text: "Sophia Martinez commented on 'Landing Page hero section'", time: "1 hour ago", read: false },
-    { id: 3, text: "Alex Rivera completed subtask on 'Figma screens'", time: "2 hours ago", read: true }
-  ]);
+  const [readMap, setReadMap] = useState({});
+
+  const notifications = (auditLog && auditLog.length > 0)
+    ? auditLog.slice(0, 5).map((log, idx) => ({
+        id: log.id || `log-${idx}`,
+        text: `${log.actor}: ${log.details || log.action}`,
+        time: new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        read: !!readMap[log.id || `log-${idx}`]
+      }))
+    : [
+        {
+          id: 'sys-status-1',
+          text: 'Enterprise real-time sync channel connected and active.',
+          time: 'Live',
+          read: true
+        }
+      ];
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
+    const updated = {};
+    notifications.forEach(n => { updated[n.id] = true; });
+    setReadMap(updated);
   };
 
   const getActiveLabel = () => {

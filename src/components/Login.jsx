@@ -226,11 +226,11 @@ export default function Login({ members, onLogin, theme, toggleTheme }) {
             </button>
           </form>
 
-          {/* Quick Login for demo */}
+          {/* Enterprise 1-Click Access */}
           {!isRegister && (
             <div style={{ marginTop: '28px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-              <p style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', textAlign: 'center' }}>
-                Quick demo access
+              <p style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '12px', textAlign: 'center' }}>
+                Verified Team Sign-In
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
                 {members.slice(0, 3).map((m) => (
@@ -238,26 +238,29 @@ export default function Login({ members, onLogin, theme, toggleTheme }) {
                     key={m.id}
                     onClick={() => handleQuickLogin(m)}
                     className="btn"
+                    title={`Sign in as ${m.name} (${m.role})`}
                     style={{
                       width: 'auto',
-                      padding: '6px 12px',
+                      padding: '6px 14px',
                       fontSize: '12px',
                       borderRadius: '16px',
                       backgroundColor: 'var(--bg-app)',
                       border: '1px solid var(--border-color)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px'
+                      gap: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
                     }}
                   >
                     <span 
                       style={{ 
-                        width: '18px', 
-                        height: '18px', 
+                        width: '20px', 
+                        height: '20px', 
                         borderRadius: '50%', 
                         background: m.color, 
                         color: 'white', 
-                        fontSize: '8px', 
+                        fontSize: '9px', 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center',
@@ -266,7 +269,7 @@ export default function Login({ members, onLogin, theme, toggleTheme }) {
                     >
                       {m.avatar}
                     </span>
-                    <span>{m.name.split(' ')[0]} ({m.role.split(' ')[0]})</span>
+                    <span style={{ fontWeight: 600 }}>{m.name.split(' ')[0]} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({m.isAdmin ? 'Admin' : m.role.split(' ')[0]})</span></span>
                   </button>
                 ))}
               </div>
@@ -343,18 +346,19 @@ export default function Login({ members, onLogin, theme, toggleTheme }) {
                   width: '40px', 
                   height: '40px', 
                   borderRadius: '50%', 
-                  backgroundColor: '#4f46e5', 
+                  background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center', 
-                  fontWeight: 'bold' 
+                  fontWeight: 'bold',
+                  color: '#ffffff'
                 }}
               >
-                AR
+                PK
               </div>
               <div>
-                <p style={{ fontSize: '14px', fontWeight: '600' }}>Hero Design Approved</p>
-                <p style={{ fontSize: '12px', color: '#a5b4fc' }}>Design Team • High Priority</p>
+                <p style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff' }}>System Architecture Deployed</p>
+                <p style={{ fontSize: '12px', color: '#a5b4fc' }}>Core Engineering • Urgent Priority</p>
               </div>
             </div>
             {/* Simulated progress slider */}

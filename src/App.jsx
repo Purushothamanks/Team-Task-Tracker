@@ -16,6 +16,15 @@ import OverviewView from './components/OverviewView';
 import { Home as NavHome, Kanban as NavKanban, BarChart3 as NavAnalytics, Users as NavTeam, Settings as NavSettings } from 'lucide-react';
 
 export default function App() {
+  // Automatic Enterprise Version Migration: Purge legacy mock data from browser cache
+  const ENTERPRISE_STORE_VERSION = 'v2.2_enterprise_clean';
+  if (typeof window !== 'undefined' && localStorage.getItem('sf_store_version') !== ENTERPRISE_STORE_VERSION) {
+    localStorage.removeItem('sf_tasks');
+    localStorage.removeItem('sf_members');
+    localStorage.removeItem('sf_audit_logs');
+    localStorage.setItem('sf_store_version', ENTERPRISE_STORE_VERSION);
+  }
+
   // Global State Loader
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('sf_current_user');
@@ -336,6 +345,7 @@ export default function App() {
               onAddTaskClick={() => { setSelectedTask(null); setModalMode('add'); }}
               currentUser={currentUser}
               onToggleMobileMenu={() => setMobileMenuOpen(prev => !prev)}
+              auditLog={auditLogs}
             />
 
             {/* Inner pages loader */}
