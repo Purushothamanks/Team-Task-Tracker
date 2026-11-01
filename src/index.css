@@ -1490,6 +1490,23 @@ a {
 }
 
 @media (max-width: 480px) {
+  .header {
+    padding: 0 10px;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .page-container {
+    padding: 10px;
+  }
+
+  .kanban-column {
+    min-width: 240px;
+    max-width: 86vw;
+  }
+
   .analytics-grid {
     grid-template-columns: 1fr;
   }
@@ -1504,6 +1521,25 @@ a {
 
   .login-card {
     padding: 24px 16px;
+  }
+
+  .btn {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 360px) {
+  .header {
+    padding: 0 6px;
+  }
+
+  .kanban-column {
+    min-width: 220px;
+    max-width: 90vw;
+  }
+
+  .mobile-bottom-nav {
+    padding: 0 2px;
   }
 }
 
