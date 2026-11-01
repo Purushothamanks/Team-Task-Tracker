@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   CheckCircle2, 
   ListTodo, 
@@ -6,17 +6,12 @@ import {
   Award, 
   BarChart3, 
   PieChart, 
-  TrendingUp, 
   Flame, 
-  Sparkles, 
   Clock, 
-  Users, 
   Check, 
-  AlertCircle,
-  Filter,
-  Zap,
-  ArrowUpRight,
-  ShieldCheck
+  Zap, 
+  ArrowUpRight, 
+  ShieldCheck 
 } from 'lucide-react';
 
 export default function AnalyticsView({ tasks = [], members = [] }) {
@@ -32,11 +27,15 @@ export default function AnalyticsView({ tasks = [], members = [] }) {
 
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  // Priority Breakdown
-  const highPriority = tasks.filter(t => t.priority === 'high').length;
+  // Priority Breakdown (Supports both 'high' and 'urgent' enterprise classifications)
+  const highPriority = tasks.filter(t => t.priority === 'high' || t.priority === 'urgent').length;
   const mediumPriority = tasks.filter(t => t.priority === 'medium').length;
   const lowPriority = tasks.filter(t => t.priority === 'low').length;
   const totalPriorities = highPriority + mediumPriority + lowPriority;
+
+  const highCount = highPriority;
+  const mediumCount = mediumPriority;
+  const lowCount = lowPriority;
 
   const highPercent = totalPriorities > 0 ? Math.round((highPriority / totalPriorities) * 100) : 0;
   const mediumPercent = totalPriorities > 0 ? Math.round((mediumPriority / totalPriorities) * 100) : 0;

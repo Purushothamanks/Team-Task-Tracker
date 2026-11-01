@@ -13,6 +13,7 @@ import TaskDrawer from './components/TaskDrawer';
 import Toast from './components/Toast';
 import AdminConsoleView from './components/AdminConsoleView';
 import OverviewView from './components/OverviewView';
+import ErrorBoundary from './components/ErrorBoundary';
 import { Home as NavHome, Kanban as NavKanban, BarChart3 as NavAnalytics, Users as NavTeam, Settings as NavSettings } from 'lucide-react';
 
 export default function App() {
@@ -350,88 +351,90 @@ export default function App() {
 
             {/* Inner pages loader */}
             <div className="page-container">
-              {activeView === 'overview' && (
-                <OverviewView 
-                  tasks={tasks}
-                  members={members}
-                  currentUser={currentUser}
-                  auditLogs={auditLogs}
-                  onTaskClick={(task) => { setSelectedTask(task); setModalMode('view'); }}
-                  onUpdateTaskStatus={handleUpdateTaskStatus}
-                  onNavigateToBoard={() => handleViewChange('board')}
-                />
-              )}
+              <ErrorBoundary>
+                {activeView === 'overview' && (
+                  <OverviewView 
+                    tasks={tasks}
+                    members={members}
+                    currentUser={currentUser}
+                    auditLogs={auditLogs}
+                    onTaskClick={(task) => { setSelectedTask(task); setModalMode('view'); }}
+                    onUpdateTaskStatus={handleUpdateTaskStatus}
+                    onNavigateToBoard={() => handleViewChange('board')}
+                  />
+                )}
 
-              {activeView === 'board' && (
-                <DashboardView 
-                  tasks={tasks}
-                  members={members}
-                  searchQuery={searchQuery}
-                  onTaskClick={(task) => { setSelectedTask(task); setModalMode('view'); }}
-                  onAddTaskClick={() => { setSelectedTask(null); setModalMode('add'); }}
-                  onUpdateTaskStatus={handleUpdateTaskStatus}
-                />
-              )}
+                {activeView === 'board' && (
+                  <DashboardView 
+                    tasks={tasks}
+                    members={members}
+                    searchQuery={searchQuery}
+                    onTaskClick={(task) => { setSelectedTask(task); setModalMode('view'); }}
+                    onAddTaskClick={() => { setSelectedTask(null); setModalMode('add'); }}
+                    onUpdateTaskStatus={handleUpdateTaskStatus}
+                  />
+                )}
 
-              {activeView === 'analytics' && (
-                <AnalyticsView 
-                  tasks={tasks}
-                  members={members}
-                />
-              )}
+                {activeView === 'analytics' && (
+                  <AnalyticsView 
+                    tasks={tasks}
+                    members={members}
+                  />
+                )}
 
-              {activeView === 'team' && (
-                <TeamView 
-                  members={members}
-                  tasks={tasks}
-                  onAddMember={handleAddMember}
-                />
-              )}
+                {activeView === 'team' && (
+                  <TeamView 
+                    members={members}
+                    tasks={tasks}
+                    onAddMember={handleAddMember}
+                  />
+                )}
 
-              {activeView === 'settings' && (
-                <SettingsView 
-                  currentUser={currentUser}
-                  onUpdateProfile={handleUpdateProfile}
-                  theme={theme}
-                  toggleTheme={toggleTheme}
-                  onResetWorkspaceData={handleResetWorkspaceData}
-                  onExportJson={() => exportWorkspaceToJson(tasks, members, auditLogs)}
-                  onExportCsv={() => exportTasksToCsv(tasks, members)}
-                  onImportJson={(jsonStr) => {
-                    try {
-                      const parsed = JSON.parse(jsonStr);
-                      if (parsed.data?.tasks && Array.isArray(parsed.data.tasks)) {
-                        setTasks(parsed.data.tasks);
-                        realtimeSync.broadcastTaskUpdate(parsed.data.tasks);
+                {activeView === 'settings' && (
+                  <SettingsView 
+                    currentUser={currentUser}
+                    onUpdateProfile={handleUpdateProfile}
+                    theme={theme}
+                    toggleTheme={toggleTheme}
+                    onResetWorkspaceData={handleResetWorkspaceData}
+                    onExportJson={() => exportWorkspaceToJson(tasks, members, auditLogs)}
+                    onExportCsv={() => exportTasksToCsv(tasks, members)}
+                    onImportJson={(jsonStr) => {
+                      try {
+                        const parsed = JSON.parse(jsonStr);
+                        if (parsed.data?.tasks && Array.isArray(parsed.data.tasks)) {
+                          setTasks(parsed.data.tasks);
+                          realtimeSync.broadcastTaskUpdate(parsed.data.tasks);
+                        }
+                        if (parsed.data?.members && Array.isArray(parsed.data.members)) {
+                          setMembers(parsed.data.members);
+                          realtimeSync.broadcastMemberUpdate(parsed.data.members);
+                        }
+                        if (parsed.data?.auditLog && Array.isArray(parsed.data.auditLog)) {
+                          setAuditLogs(parsed.data.auditLog);
+                        }
+                        showToast('Enterprise workspace backup restored successfully!', 'success');
+                        logEvent(currentUser.name, 'Restored workspace from JSON backup snapshot');
+                      } catch (err) {
+                        showToast('Failed to import backup: ' + err.message, 'error');
                       }
-                      if (parsed.data?.members && Array.isArray(parsed.data.members)) {
-                        setMembers(parsed.data.members);
-                        realtimeSync.broadcastMemberUpdate(parsed.data.members);
-                      }
-                      if (parsed.data?.auditLog && Array.isArray(parsed.data.auditLog)) {
-                        setAuditLogs(parsed.data.auditLog);
-                      }
-                      showToast('Enterprise workspace backup restored successfully!', 'success');
-                      logEvent(currentUser.name, 'Restored workspace from JSON backup snapshot');
-                    } catch (err) {
-                      showToast('Failed to import backup: ' + err.message, 'error');
-                    }
-                  }}
-                />
-              )}
+                    }}
+                  />
+                )}
 
-              {activeView === 'admin' && (
-                <AdminConsoleView 
-                  members={members}
-                  tasks={tasks}
-                  currentUser={currentUser}
-                  auditLogs={auditLogs}
-                  onDeleteMember={handleDeleteMember}
-                  onToggleAdminStatus={handleToggleAdminStatus}
-                  onClearLogs={handleClearLogs}
-                  onUpdateMemberRole={handleUpdateMemberRole}
-                />
-              )}
+                {activeView === 'admin' && (
+                  <AdminConsoleView 
+                    members={members}
+                    tasks={tasks}
+                    currentUser={currentUser}
+                    auditLogs={auditLogs}
+                    onDeleteMember={handleDeleteMember}
+                    onToggleAdminStatus={handleToggleAdminStatus}
+                    onClearLogs={handleClearLogs}
+                    onUpdateMemberRole={handleUpdateMemberRole}
+                  />
+                )}
+              </ErrorBoundary>
             </div>
           </main>
 
